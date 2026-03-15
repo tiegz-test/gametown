@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Solitaire — GameTown</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after {
       margin: 0;
@@ -18,14 +18,10 @@
 
     body {
       min-height: 100vh;
-      background: linear-gradient(
-        135deg,
-        #7B2FBE 0%,
-        #3A0CA3 20%,
-        #00D4FF 45%,
-        #FF006E 70%,
-        #FB5607 100%
-      );
+      background-color: #0a1800;
+      background-image: url('bg.png');
+      background-size: cover;
+      background-position: center top;
       background-attachment: fixed;
       display: flex;
       flex-direction: column;
@@ -62,16 +58,15 @@
 
     h1 {
       font-size: clamp(1.5rem, 5vw, 2.8rem);
-      font-weight: 900;
-      letter-spacing: 0.08em;
-      color: #ffffff;
+      font-family: 'Cinzel Decorative', serif;
+      font-weight: 700;
+      letter-spacing: 0.06em;
       text-align: center;
-      text-shadow:
-        0 0 10px #00D4FF,
-        0 0 30px #00D4FF,
-        0 0 60px #FF006E,
-        0 0 100px #FF006E,
-        0 4px 8px rgba(0, 0, 0, 0.5);
+      background: linear-gradient(180deg, #FFF5A0 0%, #FFD700 30%, #C8960C 60%, #FFD700 80%, #A67C00 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.95)) drop-shadow(0 0 14px rgba(255,190,0,0.45));
       user-select: none;
     }
 
