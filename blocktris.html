@@ -150,6 +150,43 @@
       padding-top: 0.75rem;
     }
 
+    /* ── Touch hint (mobile only) ── */
+    #touch-hint {
+      display: none; /* hidden on desktop */
+      flex-direction: row;
+      gap: 1.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      padding: 0.75rem 1rem 0;
+      max-width: 360px;
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+      #touch-hint { display: flex; }
+    }
+
+    .hint-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .hint-gesture {
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+
+    .hint-label {
+      font-size: 0.5rem;
+      font-family: system-ui, sans-serif;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
     /* ── Overlay ── */
     #overlay {
       display: none;
@@ -242,6 +279,12 @@
       </div>
     </div>
   </main>
+
+  <div id="touch-hint" aria-label="Touch controls">
+    <div class="hint-item"><span class="hint-gesture">👆</span><span class="hint-label">Tap — Rotate</span></div>
+    <div class="hint-item"><span class="hint-gesture">👈👉</span><span class="hint-label">Swipe — Move</span></div>
+    <div class="hint-item"><span class="hint-gesture">👇</span><span class="hint-label">Swipe Down — Drop</span></div>
+  </div>
 
   <div id="overlay">
     <div class="overlay-panel">
@@ -608,6 +651,46 @@
         case ' ':          e.preventDefault(); hardDrop();    break;
       }
     });
+
+    // ── Touch / swipe controls ─────────────────────────────────────────────────
+    let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+    const SWIPE_THRESHOLD = 20;  // px — minimum movement to count as a swipe
+    const TAP_MAX_MOVE   = 15;   // px — maximum movement to count as a tap
+    const TAP_MAX_MS     = 300;  // ms — maximum duration to count as a tap
+
+    boardCanvas.addEventListener('touchstart', e => {
+      e.preventDefault();
+      const t = e.changedTouches[0];
+      touchStartX = t.clientX;
+      touchStartY = t.clientY;
+      touchStartTime = Date.now();
+      if (gameState === 'idle') { initGame(); }
+    }, { passive: false });
+
+    boardCanvas.addEventListener('touchend', e => {
+      e.preventDefault();
+      if (gameState !== 'playing') return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - touchStartX;
+      const dy = t.clientY - touchStartY;
+      const dt = Date.now() - touchStartTime;
+      const absDx = Math.abs(dx), absDy = Math.abs(dy);
+      const totalMove = Math.sqrt(dx * dx + dy * dy);
+
+      if (totalMove < TAP_MAX_MOVE && dt < TAP_MAX_MS) {
+        // Tap → rotate
+        rotatePiece();
+      } else if (absDx > absDy && absDx > SWIPE_THRESHOLD) {
+        // Horizontal swipe → move
+        if (dx < 0) moveLeft(); else moveRight();
+      } else if (dy > SWIPE_THRESHOLD && absDy > absDx) {
+        // Swipe down → hard drop
+        hardDrop();
+      } else if (dy < -SWIPE_THRESHOLD && absDy > absDx) {
+        // Swipe up → toggle pause
+        togglePause();
+      }
+    }, { passive: false });
 
     document.getElementById('overlay-btn').addEventListener('click', () => {
       if (gameState === 'idle' || gameState === 'gameover') {
