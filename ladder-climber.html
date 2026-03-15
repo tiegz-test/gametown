@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ladder Climber — GameTown</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { min-height: 100%; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #7B2FBE 0%, #3A0CA3 20%, #00D4FF 45%, #FF006E 70%, #FB5607 100%);
+      background-attachment: fixed;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: 'Orbitron', sans-serif;
+      padding-bottom: 1rem;
+    }
+
+    /* ── Header ── */
+    header {
+      width: 100%;
+      max-width: 480px;
+      padding: 1.2rem 1.2rem 0.75rem;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .back-link {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #00D4FF;
+      text-decoration: none;
+      text-shadow: 0 0 10px rgba(0,212,255,0.6);
+      transition: text-shadow 0.2s;
+      white-space: nowrap;
+    }
+    .back-link:hover { text-shadow: 0 0 18px #00D4FF, 0 0 40px rgba(0,212,255,0.5); }
+
+    h1 {
+      font-size: clamp(1.1rem, 4vw, 2rem);
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      color: #fff;
+      text-align: center;
+      text-shadow: 0 0 10px #00D4FF, 0 0 30px #00D4FF, 0 0 60px #FF006E, 0 4px 8px rgba(0,0,0,0.5);
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .new-game-btn {
+      justify-self: end;
+      padding: 0.4rem 0.9rem;
+      background: linear-gradient(135deg, #00D4FF, #FF006E);
+      color: #0a001a;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: filter 0.2s, box-shadow 0.2s;
+      white-space: nowrap;
+    }
+    .new-game-btn:hover {
+      filter: brightness(1.15);
+      box-shadow: 0 0 16px rgba(0,212,255,0.6), 0 0 32px rgba(255,0,110,0.4);
+    }
+
+    /* ── Canvas ── */
+    main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    #game {
+      display: block;
+      width: min(100vw, 480px);
+      height: auto;
+      border-left: 1px solid rgba(0,212,255,0.2);
+      border-right: 1px solid rgba(0,212,255,0.2);
+    }
+
+    /* ── Mobile controls ── */
+    #mobile-controls {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      align-items: center;
+      padding: 0.75rem 0 1rem;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .ctrl-btn {
+      width: 68px;
+      height: 68px;
+      background: rgba(10,5,30,0.7);
+      border: 2px solid rgba(0,212,255,0.4);
+      border-radius: 50%;
+      color: #00D4FF;
+      font-size: 1.5rem;
+      cursor: pointer;
+      touch-action: none;
+      user-select: none;
+      transition: background 0.1s, border-color 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .ctrl-btn:active,
+    .ctrl-btn.pressed {
+      background: rgba(0,212,255,0.25);
+      border-color: rgba(0,212,255,0.8);
+    }
+
+    #btn-jump {
+      background: rgba(255,0,110,0.15);
+      border-color: rgba(255,0,110,0.5);
+      color: #FF006E;
+    }
+    #btn-jump:active, #btn-jump.pressed {
+      background: rgba(255,0,110,0.35);
+      border-color: #FF006E;
+    }
+
+    /* ── Overlay ── */
+    #overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10,5,30,0.78);
+      backdrop-filter: blur(6px);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+    }
+    #overlay.show { display: flex; }
+
+    .overlay-panel {
+      background: rgba(10,5,30,0.88);
+      border: 1px solid rgba(0,212,255,0.4);
+      border-radius: 20px;
+      padding: 2.5rem 3.5rem;
+      text-align: center;
+      box-shadow: 0 0 40px rgba(0,212,255,0.3), 0 0 80px rgba(255,0,110,0.2);
+      max-width: 90vw;
+    }
+
+    .overlay-panel h2 {
+      font-size: clamp(1.8rem,6vw,3rem);
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 10px #00D4FF, 0 0 30px #00D4FF, 0 0 60px #FF006E;
+      margin-bottom: 0.4rem;
+    }
+
+    .overlay-panel p {
+      color: rgba(255,255,255,0.7);
+      font-family: system-ui, sans-serif;
+      font-size: 0.9rem;
+      margin-bottom: 1.75rem;
+      line-height: 1.5;
+    }
+
+    .overlay-panel button {
+      padding: 0.7rem 2.2rem;
+      background: linear-gradient(135deg, #00D4FF, #FF006E);
+      color: #0a001a;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: filter 0.2s, box-shadow 0.2s;
+    }
+    .overlay-panel button:hover {
+      filter: brightness(1.15);
+      box-shadow: 0 0 20px rgba(0,212,255,0.6), 0 0 40px rgba(255,0,110,0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="index.html" class="back-link">← GameTown</a>
+    <h1>Ladder Climber</h1>
+    <button class="new-game-btn" id="new-game-btn">New Game</button>
+  </header>
+
+  <main>
+    <canvas id="game" width="480" height="640"></canvas>
+  </main>
+
+  <div id="mobile-controls">
+    <button class="ctrl-btn" id="btn-left">←</button>
+    <button class="ctrl-btn" id="btn-jump">↑</button>
+    <button class="ctrl-btn" id="btn-right">→</button>
+  </div>
+
+  <div id="overlay">
+    <div class="overlay-panel">
+      <h2 id="overlay-title">Ladder Climber</h2>
+      <p id="overlay-msg">Dodge the barrels, climb the ladders,<br>reach the top to win!</p>
+      <button id="overlay-btn">Start</button>
+    </div>
+  </div>
+
+  <script>
+    // ── Canvas & context ───────────────────────────────────────────────────────
+    const canvas = document.getElementById('game');
+    const ctx    = canvas.getContext('2d');
+    const W = 480, H = 640;
+
+    // ── Level definitions ──────────────────────────────────────────────────────
+    const LEVELS = [
+      {
+        platforms: [
+          { x: 0,   y: 596, w: 480, h: 14 },  // ground
+          { x: 60,  y: 476, w: 360, h: 14 },
+          { x: 0,   y: 356, w: 360, h: 14 },
+          { x: 60,  y: 236, w: 360, h: 14 },
+          { x: 0,   y: 116, w: 480, h: 14 },  // top
+        ],
+        ladders: [
+          { x: 370, y: 482, w: 24, h: 120 },   // P1→P2
+          { x: 60,  y: 362, w: 24, h: 120 },   // P2→P3
+          { x: 330, y: 242, w: 24, h: 120 },   // P3→P4
+          { x: 80,  y: 122, w: 24, h: 120 },   // P4→P5
+        ],
+        barrelInterval: 3200,
+        barrelSpeed: 85,
+      },
+      {
+        platforms: [
+          { x: 0,   y: 596, w: 480, h: 14 },
+          { x: 60,  y: 476, w: 360, h: 14 },
+          { x: 0,   y: 356, w: 360, h: 14 },
+          { x: 60,  y: 236, w: 360, h: 14 },
+          { x: 0,   y: 116, w: 480, h: 14 },
+        ],
+        ladders: [
+          { x: 370, y: 482, w: 24, h: 120 },
+          { x: 60,  y: 362, w: 24, h: 120 },
+          { x: 330, y: 242, w: 24, h: 120 },
+          { x: 80,  y: 122, w: 24, h: 120 },
+        ],
+        barrelInterval: 2200,
+        barrelSpeed: 115,
+      },
+      {
+        platforms: [
+          { x: 0,   y: 596, w: 480, h: 14 },
+          { x: 60,  y: 476, w: 360, h: 14 },
+          { x: 0,   y: 356, w: 360, h: 14 },
+          { x: 60,  y: 236, w: 360, h: 14 },
+          { x: 0,   y: 116, w: 480, h: 14 },
+        ],
+        ladders: [
+          { x: 370, y: 482, w: 24, h: 120 },
+          { x: 60,  y: 362, w: 24, h: 120 },
+          { x: 330, y: 242, w: 24, h: 120 },
+          { x: 80,  y: 122, w: 24, h: 120 },
+        ],
+        barrelInterval: 1500,
+        barrelSpeed: 145,
+      },
+    ];
+
+    // ── Constants ──────────────────────────────────────────────────────────────
+    const GRAVITY    = 900;
+    const JUMP_VY    = -440;
+    const WALK_SPEED = 140;
+    const CLIMB_SPEED = 100;
+    const PW = 22, PH = 32;  // player width, height
+
+    // ── State ──────────────────────────────────────────────────────────────────
+    let gameState = 'idle';
+    let score, lives, levelIdx;
+    let player, barrels;
+    let barrelTimer, barrelNextSpawn;
+    let rafId, lastTime;
+    let villainBob = 0;
+    let deathTimer = 0;
+    let barrelJumpedIds;
+
+    // ── Input ──────────────────────────────────────────────────────────────────
+    const keys = {};
+    const btns = { left: false, right: false, jump: false };
+    let jumpPressed = false; // edge-detect for jump
+
+    document.addEventListener('keydown', e => {
+      keys[e.code] = true;
+      if ((e.code === 'Space' || e.code === 'ArrowUp') && !keys._jumpPrev) {
+        jumpPressed = true;
+      }
+      if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+    });
+    document.addEventListener('keyup', e => { keys[e.code] = false; });
+
+    function bindBtn(id, flag) {
+      const el = document.getElementById(id);
+      const press = () => { btns[flag] = true; el.classList.add('pressed'); };
+      const release = () => { btns[flag] = false; el.classList.remove('pressed'); };
+      el.addEventListener('touchstart', e => { e.preventDefault(); press(); }, { passive: false });
+      el.addEventListener('touchend',   e => { e.preventDefault(); release(); }, { passive: false });
+      el.addEventListener('mousedown',  press);
+      el.addEventListener('mouseup',    release);
+      el.addEventListener('mouseleave', release);
+    }
+
+    document.getElementById('btn-left').addEventListener('touchstart',  e => { e.preventDefault(); btns.left = true;  document.getElementById('btn-left').classList.add('pressed'); }, { passive: false });
+    document.getElementById('btn-left').addEventListener('touchend',    e => { e.preventDefault(); btns.left = false; document.getElementById('btn-left').classList.remove('pressed'); }, { passive: false });
+    document.getElementById('btn-left').addEventListener('mousedown',   () => { btns.left = true; });
+    document.getElementById('btn-left').addEventListener('mouseup',     () => { btns.left = false; });
+    document.getElementById('btn-left').addEventListener('mouseleave',  () => { btns.left = false; });
+
+    document.getElementById('btn-right').addEventListener('touchstart', e => { e.preventDefault(); btns.right = true;  document.getElementById('btn-right').classList.add('pressed'); }, { passive: false });
+    document.getElementById('btn-right').addEventListener('touchend',   e => { e.preventDefault(); btns.right = false; document.getElementById('btn-right').classList.remove('pressed'); }, { passive: false });
+    document.getElementById('btn-right').addEventListener('mousedown',  () => { btns.right = true; });
+    document.getElementById('btn-right').addEventListener('mouseup',    () => { btns.right = false; });
+    document.getElementById('btn-right').addEventListener('mouseleave', () => { btns.right = false; });
+
+    document.getElementById('btn-jump').addEventListener('touchstart',  e => { e.preventDefault(); btns.jump = true; jumpPressed = true; document.getElementById('btn-jump').classList.add('pressed'); }, { passive: false });
+    document.getElementById('btn-jump').addEventListener('touchend',    e => { e.preventDefault(); btns.jump = false; document.getElementById('btn-jump').classList.remove('pressed'); }, { passive: false });
+    document.getElementById('btn-jump').addEventListener('mousedown',   () => { btns.jump = true; jumpPressed = true; });
+    document.getElementById('btn-jump').addEventListener('mouseup',     () => { btns.jump = false; });
+    document.getElementById('btn-jump').addEventListener('mouseleave',  () => { btns.jump = false; });
+
+    function isLeft()  { return keys['ArrowLeft']  || keys['KeyA'] || btns.left; }
+    function isRight() { return keys['ArrowRight'] || keys['KeyD'] || btns.right; }
+    function isUp()    { return keys['ArrowUp']    || keys['KeyW']; }
+    function isDown()  { return keys['ArrowDown']  || keys['KeyS']; }
+
+    // ── Level helpers ──────────────────────────────────────────────────────────
+    function getLevelData() { return LEVELS[Math.min(levelIdx, LEVELS.length - 1)]; }
+
+    function spawnPlayer() {
+      const lv = getLevelData();
+      const ground = lv.platforms[0];
+      player = {
+        x: ground.x + ground.w - PW - 20,
+        y: ground.y - PH,
+        vx: 0, vy: 0,
+        onGround: false, onLadder: false,
+        facingRight: false,
+        state: 'idle',
+        invincible: 0,  // seconds of invincibility after respawn
+      };
+    }
+
+    // ── Game init ──────────────────────────────────────────────────────────────
+    function initGame() {
+      score = 0;
+      lives = 3;
+      levelIdx = 0;
+      initLevel();
+    }
+
+    function initLevel() {
+      barrels = [];
+      barrelJumpedIds = new Set();
+      barrelTimer = 0;
+      const lv = getLevelData();
+      barrelNextSpawn = lv.barrelInterval;
+      spawnPlayer();
+      player.invincible = 1.5; // grace period at level start
+    }
+
+    // ── Physics helpers ────────────────────────────────────────────────────────
+    function rectOverlap(ax,ay,aw,ah, bx,by,bw,bh) {
+      return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by;
+    }
+
+    function onPlatform(entity, platforms) {
+      const ex = entity.x, ey = entity.y, ew = entity.w ?? PW, eh = entity.h ?? PH;
+      for (const p of platforms) {
+        const foot = ey + eh;
+        const prevFoot = foot - entity.vy * 0.016; // approximate previous frame
+        if (ex + ew > p.x + 4 && ex < p.x + p.w - 4 &&
+            foot >= p.y && foot <= p.y + p.h + 6 &&
+            entity.vy >= 0) {
+          return p;
+        }
+      }
+      return null;
+    }
+
+    function nearLadder(px, py) {
+      const cx = px + PW / 2;
+      const cy = py + PH / 2;
+      const lv = getLevelData();
+      for (const l of lv.ladders) {
+        if (cx > l.x && cx < l.x + l.w && cy > l.y - 10 && cy < l.y + l.h + 10) {
+          return l;
+        }
+      }
+      return null;
+    }
+
+    // ── Update ─────────────────────────────────────────────────────────────────
+    function update(dt) {
+      const lv = getLevelData();
+
+      // Villain bobbing animation
+      villainBob += dt * 3;
+
+      // Barrel spawning
+      barrelTimer += dt * 1000;
+      if (barrelTimer >= barrelNextSpawn) {
+        barrelTimer = 0;
+        barrelNextSpawn = lv.barrelInterval;
+        const topPlat = lv.platforms[4];
+        barrels.push({
+          id: Math.random(),
+          x: topPlat.x + 60,
+          y: topPlat.y - 22,
+          w: 20, h: 20,
+          vx: lv.barrelSpeed,
+          vy: 0,
+          onGround: false,
+        });
+      }
+
+      // Death animation
+      if (player.state === 'dead') {
+        deathTimer -= dt;
+        if (deathTimer <= 0) {
+          if (lives <= 0) {
+            endGame(false);
+          } else {
+            spawnPlayer();
+            player.invincible = 1.5;
+          }
+        }
+        return;
+      }
+
+      // Invincibility countdown
+      if (player.invincible > 0) player.invincible -= dt;
+
+      // ── Player movement ──
+      const ladder = nearLadder(player.x, player.y);
+
+      if (player.onLadder) {
+        player.vx = 0;
+        player.vy = 0;
+        if (isUp())   { player.vy = -CLIMB_SPEED; }
+        if (isDown()) { player.vy =  CLIMB_SPEED; }
+        if (isLeft())  { player.onLadder = false; player.vx = -WALK_SPEED; }
+        if (isRight()) { player.onLadder = false; player.vx =  WALK_SPEED; }
+
+        // Jump off ladder
+        if (jumpPressed) {
+          player.onLadder = false;
+          player.vy = JUMP_VY;
+        }
+
+        // Exit ladder at top
+        if (ladder && player.y < ladder.y - 4) {
+          player.onLadder = false;
+          player.vy = 0;
+        }
+        // Exit ladder at bottom
+        if (ladder && player.y + PH > ladder.y + ladder.h + 10) {
+          player.onLadder = false;
+        }
+        // Enter ladder (if there's one nearby and climbing key)
+        if (!ladder) { player.onLadder = false; }
+      } else {
+        // Horizontal
+        player.vx = 0;
+        if (isLeft())  { player.vx = -WALK_SPEED; player.facingRight = false; }
+        if (isRight()) { player.vx =  WALK_SPEED;  player.facingRight = true; }
+
+        // Enter ladder
+        if (ladder && (isUp() || isDown())) {
+          player.onLadder = true;
+          // Snap to ladder center
+          player.x = ladder.x + ladder.w / 2 - PW / 2;
+        }
+
+        // Jump
+        if (jumpPressed && player.onGround) {
+          player.vy = JUMP_VY;
+          player.onGround = false;
+        }
+
+        // Gravity
+        player.vy += GRAVITY * dt;
+      }
+
+      jumpPressed = false;
+
+      // Move
+      player.x += player.vx * dt;
+      player.y += player.vy * dt;
+
+      // Clamp to canvas
+      player.x = Math.max(0, Math.min(W - PW, player.x));
+
+      // Platform collision
+      player.onGround = false;
+      for (const p of lv.platforms) {
+        const foot = player.y + PH;
+        if (player.x + PW > p.x + 4 && player.x < p.x + p.w - 4 &&
+            foot >= p.y && foot <= p.y + p.h + Math.abs(player.vy) * dt + 2 &&
+            player.vy >= 0) {
+          player.y = p.y - PH;
+          player.vy = 0;
+          player.onGround = true;
+          break;
+        }
+      }
+
+      // Fall off bottom
+      if (player.y > H + 50) { killPlayer(); return; }
+
+      // Player state
+      if (player.onLadder) player.state = 'climbing';
+      else if (!player.onGround) player.state = 'jumping';
+      else if (player.vx !== 0) player.state = 'walking';
+      else player.state = 'idle';
+
+      // ── Barrels update ──
+      for (let i = barrels.length - 1; i >= 0; i--) {
+        const b = barrels[i];
+
+        // Gravity for barrels
+        b.vy += GRAVITY * dt;
+        b.x  += b.vx * dt;
+        b.y  += b.vy * dt;
+
+        // Platform collision for barrels
+        b.onGround = false;
+        for (const p of lv.platforms) {
+          const foot = b.y + b.h;
+          if (b.x + b.w > p.x && b.x < p.x + p.w &&
+              foot >= p.y && foot <= p.y + p.h + Math.abs(b.vy) * dt + 4 &&
+              b.vy >= 0) {
+            b.y = p.y - b.h;
+            b.vy = 0;
+            b.onGround = true;
+            // Reverse direction at platform edges
+            if (b.vx > 0 && b.x + b.w >= p.x + p.w - 2) {
+              b.vx = -Math.abs(b.vx);
+            } else if (b.vx < 0 && b.x <= p.x + 2) {
+              b.vx = Math.abs(b.vx);
+            }
+            break;
+          }
+        }
+
+        // Despawn off bottom
+        if (b.y > H + 60) { barrels.splice(i, 1); continue; }
+
+        // Score for jumping over barrel
+        if (!barrelJumpedIds.has(b.id) && !player.onGround &&
+            player.y + PH < b.y + b.h / 2 &&
+            Math.abs((player.x + PW/2) - (b.x + b.w/2)) < 40) {
+          barrelJumpedIds.add(b.id);
+          score += 100;
+        }
+
+        // Barrel-player collision
+        if (player.invincible <= 0 &&
+            rectOverlap(player.x+3, player.y+3, PW-6, PH-6, b.x, b.y, b.w, b.h)) {
+          killPlayer();
+          return;
+        }
+      }
+
+      // ── Goal check ──
+      const topPlat = lv.platforms[4];
+      const goalX = topPlat.x + topPlat.w - 50;
+      const goalY = topPlat.y - 44;
+      if (rectOverlap(player.x, player.y, PW, PH, goalX, goalY, 32, 40)) {
+        score += 500 * (levelIdx + 1);
+        levelIdx++;
+        if (levelIdx >= LEVELS.length) {
+          endGame(true);
+        } else {
+          gameState = 'levelcomplete';
+          document.getElementById('overlay-title').textContent = 'Level ' + levelIdx + '!';
+          document.getElementById('overlay-msg').textContent = 'Score: ' + score + '\nGet ready for more barrels...';
+          document.getElementById('overlay-btn').textContent = 'Next Level';
+          showOverlay();
+        }
+      }
+    }
+
+    function killPlayer() {
+      if (player.state === 'dead') return;
+      lives--;
+      player.state = 'dead';
+      player.vx = 0;
+      player.vy = -300;
+      deathTimer = 1.2;
+    }
+
+    function endGame(won) {
+      gameState = 'gameover';
+      cancelAnimationFrame(rafId);
+      document.getElementById('overlay-title').textContent = won ? 'You Win!' : 'Game Over';
+      document.getElementById('overlay-msg').textContent = 'Final Score: ' + score;
+      document.getElementById('overlay-btn').textContent = 'Play Again';
+      showOverlay();
+    }
+
+    // ── Drawing ────────────────────────────────────────────────────────────────
+    function drawStar(cx, cy, r, color) {
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const angle = (i * Math.PI) / 5 - Math.PI / 2;
+        const rad = i % 2 === 0 ? r : r * 0.42;
+        const x = cx + Math.cos(angle) * rad;
+        const y = cy + Math.sin(angle) * rad;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+    function draw() {
+      const lv = getLevelData();
+
+      // Background
+      ctx.fillStyle = 'rgba(10,5,30,0.93)';
+      ctx.fillRect(0, 0, W, H);
+
+      // ── Platforms ──
+      for (const p of lv.platforms) {
+        // Main body
+        ctx.fillStyle = 'rgba(0,150,200,0.55)';
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+        // Bright top edge
+        ctx.fillStyle = '#00D4FF';
+        ctx.fillRect(p.x, p.y, p.w, 3);
+        // Subtle glow
+        ctx.shadowColor = '#00D4FF';
+        ctx.shadowBlur = 8;
+        ctx.fillRect(p.x, p.y, p.w, 3);
+        ctx.shadowBlur = 0;
+      }
+
+      // ── Ladders ──
+      for (const l of lv.ladders) {
+        // Side rails
+        ctx.strokeStyle = '#FB5607';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(l.x + 3, l.y); ctx.lineTo(l.x + 3, l.y + l.h); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(l.x + l.w - 3, l.y); ctx.lineTo(l.x + l.w - 3, l.y + l.h); ctx.stroke();
+        // Rungs
+        ctx.strokeStyle = '#FF8C00';
+        ctx.lineWidth = 2;
+        for (let ry = l.y + 8; ry < l.y + l.h; ry += 16) {
+          ctx.beginPath();
+          ctx.moveTo(l.x + 3, ry); ctx.lineTo(l.x + l.w - 3, ry); ctx.stroke();
+        }
+      }
+
+      // ── Villain (top-left of top platform) ──
+      const topPlat = lv.platforms[4];
+      const vx = topPlat.x + 18;
+      const vy = topPlat.y - 52 + Math.sin(villainBob) * 3;
+      // Body
+      ctx.fillStyle = '#7B2FBE';
+      ctx.fillRect(vx, vy + 16, 36, 30);
+      // Head
+      ctx.fillStyle = '#5A1F90';
+      ctx.beginPath();
+      ctx.ellipse(vx + 18, vy + 12, 18, 14, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Eyes (angry)
+      ctx.fillStyle = '#FF006E';
+      ctx.fillRect(vx + 6,  vy + 6, 6, 5);
+      ctx.fillRect(vx + 22, vy + 6, 6, 5);
+      // Arms raised
+      ctx.strokeStyle = '#7B2FBE';
+      ctx.lineWidth = 5;
+      ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(vx, vy+20); ctx.lineTo(vx-14, vy+8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(vx+36, vy+20); ctx.lineTo(vx+50, vy+8); ctx.stroke();
+
+      // ── Goal (star at top-right) ──
+      const goalX = topPlat.x + topPlat.w - 34;
+      const goalY = topPlat.y - 50;
+      // Person silhouette (rescue target)
+      ctx.fillStyle = '#FF006E';
+      ctx.beginPath();
+      ctx.arc(goalX + 10, goalY + 8, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillRect(goalX + 3, goalY + 15, 14, 18);
+      // Star above them
+      drawStar(goalX + 10, goalY - 8, 9, '#FB5607');
+
+      // ── Barrels ──
+      for (const b of barrels) {
+        const cx = b.x + b.w / 2, cy = b.y + b.h / 2, r = b.w / 2;
+        ctx.fillStyle = '#FB5607';
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+        // Ring
+        ctx.strokeStyle = '#7B2FBE';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(cx, cy, r - 3, 0, Math.PI * 2); ctx.stroke();
+        // Cross band
+        ctx.strokeStyle = '#7B2FBE';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(b.x + 2, cy); ctx.lineTo(b.x + b.w - 2, cy); ctx.stroke();
+      }
+
+      // ── Player ──
+      const blink = player.invincible > 0 && Math.floor(player.invincible * 8) % 2 === 0;
+      if (!blink) {
+        const px = player.x, py = player.y;
+        if (player.state === 'dead') {
+          ctx.globalAlpha = 0.5;
+        }
+        // Body
+        ctx.fillStyle = player.state === 'dead' ? '#444' : '#00D4FF';
+        ctx.fillRect(px + 3, py + 12, PW - 6, PH - 12);
+        // Legs (walking animation)
+        ctx.fillStyle = player.state === 'dead' ? '#333' : '#0096FF';
+        if (player.state === 'walking') {
+          const legPhase = Math.sin(Date.now() / 80);
+          ctx.fillRect(px + 4, py + PH - 10, 6, 10 + (legPhase > 0 ? 2 : 0));
+          ctx.fillRect(px + PW - 10, py + PH - 10, 6, 10 + (legPhase < 0 ? 2 : 0));
+        } else {
+          ctx.fillRect(px + 4, py + PH - 10, 6, 10);
+          ctx.fillRect(px + PW - 10, py + PH - 10, 6, 10);
+        }
+        // Head
+        ctx.fillStyle = player.state === 'dead' ? '#555' : '#00D4FF';
+        ctx.beginPath();
+        ctx.ellipse(px + PW/2, py + 7, 9, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Eyes
+        ctx.fillStyle = '#0a001a';
+        const eyeOff = player.facingRight ? 2 : -2;
+        ctx.fillRect(px + PW/2 + eyeOff, py + 4, 3, 3);
+        // Hat
+        ctx.fillStyle = player.state === 'dead' ? '#555' : '#FF006E';
+        ctx.fillRect(px + 4, py, PW - 8, 5);
+        ctx.fillRect(px + 6, py - 5, PW - 12, 6);
+
+        ctx.globalAlpha = 1;
+      }
+
+      // ── HUD ──
+      ctx.font = '700 13px Orbitron, sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'left';
+      ctx.fillText('SCORE: ' + String(score).padStart(5, '0'), 10, 22);
+
+      // Lives
+      ctx.textAlign = 'center';
+      let heartsStr = '';
+      for (let i = 0; i < 3; i++) heartsStr += i < lives ? '♥' : '♡';
+      ctx.fillStyle = '#FF006E';
+      ctx.font = '700 16px Orbitron, sans-serif';
+      ctx.fillText(heartsStr, W / 2, 22);
+
+      // Level
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#00D4FF';
+      ctx.font = '700 13px Orbitron, sans-serif';
+      ctx.fillText('LVL ' + (levelIdx + 1), W - 10, 22);
+      ctx.textAlign = 'left';
+    }
+
+    // ── Game loop ──────────────────────────────────────────────────────────────
+    function loop(timestamp) {
+      if (gameState !== 'playing') return;
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+      lastTime = timestamp;
+      update(dt);
+      draw();
+      rafId = requestAnimationFrame(loop);
+    }
+
+    function startLoop() {
+      if (rafId) cancelAnimationFrame(rafId);
+      lastTime = performance.now();
+      rafId = requestAnimationFrame(loop);
+    }
+
+    // ── Overlay helpers ────────────────────────────────────────────────────────
+    function showOverlay() { document.getElementById('overlay').classList.add('show'); }
+    function hideOverlay() { document.getElementById('overlay').classList.remove('show'); }
+
+    // ── Event wiring ───────────────────────────────────────────────────────────
+    document.getElementById('overlay-btn').addEventListener('click', () => {
+      if (gameState === 'idle' || gameState === 'gameover') {
+        initGame();
+        gameState = 'playing';
+        hideOverlay();
+        startLoop();
+      } else if (gameState === 'levelcomplete') {
+        initLevel();
+        gameState = 'playing';
+        hideOverlay();
+        startLoop();
+      } else if (gameState === 'paused') {
+        gameState = 'playing';
+        hideOverlay();
+        startLoop();
+      }
+    });
+
+    document.getElementById('new-game-btn').addEventListener('click', () => {
+      cancelAnimationFrame(rafId);
+      initGame();
+      gameState = 'playing';
+      hideOverlay();
+      startLoop();
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.code === 'KeyP') {
+        if (gameState === 'playing') {
+          gameState = 'paused';
+          cancelAnimationFrame(rafId);
+          document.getElementById('overlay-title').textContent = 'Paused';
+          document.getElementById('overlay-msg').textContent = 'Press P or click Resume';
+          document.getElementById('overlay-btn').textContent = 'Resume';
+          showOverlay();
+        } else if (gameState === 'paused') {
+          gameState = 'playing';
+          hideOverlay();
+          startLoop();
+        }
+      }
+    });
+
+    // ── Init ───────────────────────────────────────────────────────────────────
+    showOverlay();
+    // Draw a static preview frame
+    initGame();
+    draw();
+    gameState = 'idle';
+  </script>
+
+</body>
+</html>
