@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solitaire — GameTown</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(
+        135deg,
+        #7B2FBE 0%,
+        #3A0CA3 20%,
+        #00D4FF 45%,
+        #FF006E 70%,
+        #FB5607 100%
+      );
+      background-attachment: fixed;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: 'Orbitron', sans-serif;
+      padding-bottom: 3rem;
+    }
+
+    /* ── Header ── */
+    header {
+      width: 100%;
+      max-width: 900px;
+      padding: 1.5rem 1.5rem 1rem;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .back-link {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #00D4FF;
+      text-decoration: none;
+      text-shadow: 0 0 10px rgba(0, 212, 255, 0.6);
+      transition: text-shadow 0.2s;
+      white-space: nowrap;
+    }
+
+    .back-link:hover {
+      text-shadow: 0 0 18px rgba(0, 212, 255, 1), 0 0 40px rgba(0, 212, 255, 0.5);
+    }
+
+    h1 {
+      font-size: clamp(1.5rem, 5vw, 2.8rem);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      color: #ffffff;
+      text-align: center;
+      text-shadow:
+        0 0 10px #00D4FF,
+        0 0 30px #00D4FF,
+        0 0 60px #FF006E,
+        0 0 100px #FF006E,
+        0 4px 8px rgba(0, 0, 0, 0.5);
+      user-select: none;
+    }
+
+    .new-game-btn {
+      justify-self: end;
+      padding: 0.5rem 1.2rem;
+      background: linear-gradient(135deg, #00D4FF, #FF006E);
+      color: #0a001a;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: filter 0.2s, box-shadow 0.2s;
+      white-space: nowrap;
+    }
+
+    .new-game-btn:hover {
+      filter: brightness(1.15);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.6), 0 0 40px rgba(255, 0, 110, 0.4);
+    }
+
+    /* ── Board ── */
+    #board {
+      width: 100%;
+      max-width: 900px;
+      padding: 0 0.75rem;
+    }
+
+    .top-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .tableau-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.5rem;
+    }
+
+    /* ── Pile containers ── */
+    .pile-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 2.5 / 3.5;
+      border: 2px dashed rgba(0, 212, 255, 0.25);
+      border-radius: 10px;
+      background: rgba(10, 5, 30, 0.3);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .pile-container.empty-label::after {
+      content: attr(data-label);
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1.2rem, 3vw, 2rem);
+      color: rgba(0, 212, 255, 0.2);
+      font-family: system-ui, sans-serif;
+      pointer-events: none;
+    }
+
+    /* Tableau piles grow taller than their aspect-ratio base */
+    .tableau-pile {
+      aspect-ratio: unset;
+      min-height: calc(100vw / 7 * 1.4);
+    }
+
+    /* ── Cards ── */
+    .card {
+      position: absolute;
+      width: 100%;
+      aspect-ratio: 2.5 / 3.5;
+      border-radius: 10px;
+      cursor: pointer;
+      user-select: none;
+      transition: box-shadow 0.15s;
+    }
+
+    .card-back {
+      background: linear-gradient(135deg, #3A0CA3 0%, #7B2FBE 50%, #3A0CA3 100%);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+    }
+
+    .card-back::after {
+      content: '★';
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1rem, 2.5vw, 1.8rem);
+      color: rgba(0, 212, 255, 0.2);
+      pointer-events: none;
+    }
+
+    .card-face {
+      background: rgba(18, 10, 40, 0.93);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(2px, 0.8vw, 6px);
+      font-family: system-ui, sans-serif;
+      font-weight: 700;
+    }
+
+    .card-face .corner {
+      font-size: clamp(0.45rem, 1.4vw, 0.85rem);
+      line-height: 1.1;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .card-face .corner.bottom {
+      align-items: flex-end;
+      transform: rotate(180deg);
+    }
+
+    .card-face .center-suit {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(0.9rem, 2.8vw, 2rem);
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .red { color: #FF006E; }
+    .blue { color: #00D4FF; }
+
+    .card.selected {
+      box-shadow:
+        0 0 0 2px #00D4FF,
+        0 0 14px rgba(0, 212, 255, 0.8),
+        0 0 28px rgba(0, 212, 255, 0.4);
+      z-index: 100 !important;
+    }
+
+    /* Stock pile click area */
+    #stock-pile {
+      cursor: pointer;
+    }
+
+    /* ── Win overlay ── */
+    #win-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 5, 30, 0.75);
+      backdrop-filter: blur(6px);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #win-overlay.show {
+      display: flex;
+    }
+
+    .win-panel {
+      background: rgba(10, 5, 30, 0.85);
+      border: 1px solid rgba(0, 212, 255, 0.4);
+      border-radius: 20px;
+      padding: 3rem 4rem;
+      text-align: center;
+      box-shadow:
+        0 0 40px rgba(0, 212, 255, 0.3),
+        0 0 80px rgba(255, 0, 110, 0.2);
+    }
+
+    .win-panel h2 {
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 0.08em;
+      text-shadow:
+        0 0 10px #00D4FF,
+        0 0 30px #00D4FF,
+        0 0 60px #FF006E;
+      margin-bottom: 0.5rem;
+    }
+
+    .win-panel p {
+      color: rgba(255,255,255,0.7);
+      font-family: system-ui, sans-serif;
+      margin-bottom: 2rem;
+    }
+
+    .win-panel button {
+      padding: 0.75rem 2.5rem;
+      background: linear-gradient(135deg, #00D4FF, #FF006E);
+      color: #0a001a;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: filter 0.2s, box-shadow 0.2s;
+    }
+
+    .win-panel button:hover {
+      filter: brightness(1.15);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.6), 0 0 40px rgba(255, 0, 110, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="index.html" class="back-link">← GameTown</a>
+    <h1>Solitaire</h1>
+    <button class="new-game-btn" id="new-game-btn">New Game</button>
+  </header>
+
+  <div id="board">
+    <div class="top-row">
+      <div class="pile-container" id="stock-pile" data-label="🂠"></div>
+      <div class="pile-container" id="waste-pile"></div>
+      <div class="pile-container" style="border:none;background:none;cursor:default;"></div>
+      <div class="pile-container empty-label" id="foundation-0" data-pile="foundation" data-index="0" data-label="♥"></div>
+      <div class="pile-container empty-label" id="foundation-1" data-pile="foundation" data-index="1" data-label="♦"></div>
+      <div class="pile-container empty-label" id="foundation-2" data-pile="foundation" data-index="2" data-label="♣"></div>
+      <div class="pile-container empty-label" id="foundation-3" data-pile="foundation" data-index="3" data-label="♠"></div>
+    </div>
+    <div class="tableau-row" id="tableau-row">
+      <div class="pile-container tableau-pile" id="tableau-0" data-pile="tableau" data-index="0"></div>
+      <div class="pile-container tableau-pile" id="tableau-1" data-pile="tableau" data-index="1"></div>
+      <div class="pile-container tableau-pile" id="tableau-2" data-pile="tableau" data-index="2"></div>
+      <div class="pile-container tableau-pile" id="tableau-3" data-pile="tableau" data-index="3"></div>
+      <div class="pile-container tableau-pile" id="tableau-4" data-pile="tableau" data-index="4"></div>
+      <div class="pile-container tableau-pile" id="tableau-5" data-pile="tableau" data-index="5"></div>
+      <div class="pile-container tableau-pile" id="tableau-6" data-pile="tableau" data-index="6"></div>
+    </div>
+  </div>
+
+  <div id="win-overlay">
+    <div class="win-panel">
+      <h2>You Win!</h2>
+      <p>All cards are home. Well played.</p>
+      <button id="play-again-btn">Play Again</button>
+    </div>
+  </div>
+
+  <script>
+    // ── Constants ──────────────────────────────────────────────────────────────
+    const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'];
+    const SUIT_SYMBOLS = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
+    const SUIT_COLOR = { hearts: 'red', diamonds: 'red', clubs: 'blue', spades: 'blue' };
+    const RANK_LABELS = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
+    // Foundation suit order matches DOM ids 0-3
+    const FOUNDATION_SUITS = ['hearts', 'diamonds', 'clubs', 'spades'];
+
+    // Vertical offsets for stacked tableau cards
+    const OFFSET_DOWN = 20;   // px per face-down card
+    const OFFSET_UP = 28;     // px per face-up card
+
+    // ── State ──────────────────────────────────────────────────────────────────
+    let state = {
+      stock: [],
+      waste: [],
+      foundations: [[], [], [], []],
+      tableau: [[], [], [], [], [], [], []],
+      selected: null, // { pile: 'tableau'|'waste', colIndex, cardIndex } | null
+    };
+
+    // ── Deck helpers ───────────────────────────────────────────────────────────
+    function initDeck() {
+      const deck = [];
+      for (const suit of SUITS) {
+        for (let rank = 1; rank <= 13; rank++) {
+          deck.push({ suit, rank, faceUp: false });
+        }
+      }
+      return deck;
+    }
+
+    function shuffle(deck) {
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      return deck;
+    }
+
+    function deal() {
+      const deck = shuffle(initDeck());
+      state.stock = [];
+      state.waste = [];
+      state.foundations = [[], [], [], []];
+      state.tableau = [[], [], [], [], [], [], []];
+      state.selected = null;
+
+      // Deal to tableau: col i gets i+1 cards, top card face-up
+      for (let col = 0; col < 7; col++) {
+        for (let n = 0; n <= col; n++) {
+          const card = deck.pop();
+          card.faceUp = (n === col);
+          state.tableau[col].push(card);
+        }
+      }
+      // Remaining to stock
+      state.stock = deck.reverse(); // top of stock = last element
+    }
+
+    // ── Game rules ─────────────────────────────────────────────────────────────
+    function isRed(card) { return card.suit === 'hearts' || card.suit === 'diamonds'; }
+
+    function canPlaceOnTableau(card, col) {
+      const pile = state.tableau[col];
+      if (pile.length === 0) return card.rank === 13; // King on empty
+      const top = pile[pile.length - 1];
+      return top.faceUp && isRed(card) !== isRed(top) && card.rank === top.rank - 1;
+    }
+
+    function canPlaceOnFoundation(card, fi) {
+      const pile = state.foundations[fi];
+      const expectedSuit = FOUNDATION_SUITS[fi];
+      if (card.suit !== expectedSuit) return false;
+      if (pile.length === 0) return card.rank === 1; // Ace to empty
+      return card.rank === pile[pile.length - 1].rank + 1;
+    }
+
+    function flipTopTableau(col) {
+      const pile = state.tableau[col];
+      if (pile.length > 0 && !pile[pile.length - 1].faceUp) {
+        pile[pile.length - 1].faceUp = true;
+      }
+    }
+
+    function checkWin() {
+      return state.foundations.every(f => f.length === 13);
+    }
+
+    // ── Move logic ─────────────────────────────────────────────────────────────
+    function stockClick() {
+      if (state.stock.length === 0) {
+        // Recycle waste → stock
+        state.stock = state.waste.reverse();
+        state.waste = [];
+        state.stock.forEach(c => c.faceUp = false);
+      } else {
+        const card = state.stock.pop();
+        card.faceUp = true;
+        state.waste.push(card);
+      }
+      state.selected = null;
+      render();
+    }
+
+    function selectCard(pile, colIndex, cardIndex) {
+      // If already selected, deselect
+      if (state.selected &&
+          state.selected.pile === pile &&
+          state.selected.colIndex === colIndex &&
+          state.selected.cardIndex === cardIndex) {
+        state.selected = null;
+        render();
+        return;
+      }
+      state.selected = { pile, colIndex, cardIndex };
+      render();
+    }
+
+    function tryMoveToTableau(toCol) {
+      if (!state.selected) return;
+      const { pile, colIndex, cardIndex } = state.selected;
+
+      let cards; // the card(s) to move
+      if (pile === 'waste') {
+        if (state.waste.length === 0) return;
+        cards = [state.waste[state.waste.length - 1]];
+      } else {
+        cards = state.tableau[colIndex].slice(cardIndex);
+      }
+
+      if (cards.length === 0) return;
+      if (!canPlaceOnTableau(cards[0], toCol)) {
+        state.selected = null;
+        render();
+        return;
+      }
+
+      // Execute move
+      if (pile === 'waste') {
+        state.waste.pop();
+      } else {
+        state.tableau[colIndex].splice(cardIndex);
+        flipTopTableau(colIndex);
+      }
+      state.tableau[toCol].push(...cards);
+      state.selected = null;
+      render();
+    }
+
+    function tryMoveToFoundation(fi) {
+      if (!state.selected) return;
+      const { pile, colIndex, cardIndex } = state.selected;
+
+      let card;
+      if (pile === 'waste') {
+        if (state.waste.length === 0) return;
+        card = state.waste[state.waste.length - 1];
+        if (cardIndex !== state.waste.length - 1) return; // must be top card
+      } else {
+        // Only the top card of a tableau column can go to foundation
+        if (cardIndex !== state.tableau[colIndex].length - 1) {
+          state.selected = null; render(); return;
+        }
+        card = state.tableau[colIndex][cardIndex];
+      }
+
+      if (!canPlaceOnFoundation(card, fi)) {
+        state.selected = null;
+        render();
+        return;
+      }
+
+      if (pile === 'waste') {
+        state.waste.pop();
+      } else {
+        state.tableau[colIndex].pop();
+        flipTopTableau(colIndex);
+      }
+      state.foundations[fi].push(card);
+      state.selected = null;
+
+      if (checkWin()) {
+        render();
+        document.getElementById('win-overlay').classList.add('show');
+        return;
+      }
+      render();
+    }
+
+    function handleTableauClick(col, cardIndex) {
+      const pile = state.tableau[col];
+      if (!pile[cardIndex] || !pile[cardIndex].faceUp) return; // face-down, ignore
+
+      if (state.selected) {
+        // Try to place selected card(s) here
+        tryMoveToTableau(col);
+      } else {
+        selectCard('tableau', col, cardIndex);
+      }
+    }
+
+    function handleWasteClick() {
+      if (state.waste.length === 0) return;
+      const cardIndex = state.waste.length - 1;
+
+      if (state.selected && state.selected.pile === 'waste' && state.selected.cardIndex === cardIndex) {
+        state.selected = null;
+        render();
+        return;
+      }
+      selectCard('waste', null, cardIndex);
+    }
+
+    function handleFoundationClick(fi) {
+      if (state.selected) {
+        tryMoveToFoundation(fi);
+      }
+      // Clicking an empty or non-matching foundation with no selection: do nothing
+    }
+
+    // ── Rendering ──────────────────────────────────────────────────────────────
+    function rankLabel(rank) {
+      return RANK_LABELS[rank] || String(rank);
+    }
+
+    function createCardFaceEl(card, zIndex, top, extraClass) {
+      const el = document.createElement('div');
+      el.className = 'card card-face' + (extraClass ? ' ' + extraClass : '');
+      el.style.zIndex = zIndex;
+      if (top !== undefined) el.style.top = top + 'px';
+      const colorClass = SUIT_COLOR[card.suit];
+      const sym = SUIT_SYMBOLS[card.suit];
+      const label = rankLabel(card.rank);
+      el.innerHTML = `
+        <div class="corner ${colorClass}"><span>${label}</span><span>${sym}</span></div>
+        <div class="center-suit ${colorClass}">${sym}</div>
+        <div class="corner bottom ${colorClass}"><span>${label}</span><span>${sym}</span></div>
+      `;
+      return el;
+    }
+
+    function createCardBackEl(zIndex, top) {
+      const el = document.createElement('div');
+      el.className = 'card card-back';
+      el.style.zIndex = zIndex;
+      if (top !== undefined) el.style.top = top + 'px';
+      return el;
+    }
+
+    function renderStock() {
+      const container = document.getElementById('stock-pile');
+      container.innerHTML = '';
+      if (state.stock.length === 0) {
+        container.setAttribute('data-label', '↺');
+        container.classList.add('empty-label');
+      } else {
+        container.removeAttribute('data-label');
+        container.classList.remove('empty-label');
+        const el = createCardBackEl(1);
+        el.style.top = '0';
+        container.appendChild(el);
+      }
+    }
+
+    function renderWaste() {
+      const container = document.getElementById('waste-pile');
+      container.innerHTML = '';
+      if (state.waste.length === 0) return;
+      const card = state.waste[state.waste.length - 1];
+      const isSelected = state.selected &&
+        state.selected.pile === 'waste' &&
+        state.selected.cardIndex === state.waste.length - 1;
+      const el = createCardFaceEl(card, 1, 0, isSelected ? 'selected' : '');
+      el.addEventListener('click', handleWasteClick);
+      container.appendChild(el);
+    }
+
+    function renderFoundations() {
+      for (let fi = 0; fi < 4; fi++) {
+        const container = document.getElementById('foundation-' + fi);
+        container.innerHTML = '';
+        const pile = state.foundations[fi];
+        if (pile.length === 0) continue;
+        const card = pile[pile.length - 1];
+        const el = createCardFaceEl(card, 1, 0, '');
+        container.appendChild(el);
+      }
+    }
+
+    function renderTableau() {
+      for (let col = 0; col < 7; col++) {
+        const container = document.getElementById('tableau-' + col);
+        container.innerHTML = '';
+        const pile = state.tableau[col];
+
+        let topPx = 0;
+        let downCount = 0;
+
+        // Count face-down cards to compute offset
+        for (let i = 0; i < pile.length; i++) {
+          if (!pile[i].faceUp) downCount++;
+        }
+
+        // Compute required height for container
+        let height = 0;
+        let tmpTop = 0;
+        for (let i = 0; i < pile.length; i++) {
+          height = tmpTop;
+          if (i < pile.length - 1) {
+            tmpTop += pile[i].faceUp ? OFFSET_UP : OFFSET_DOWN;
+          }
+        }
+        // Container needs: height of last card top + card pixel height
+        const containerWidth = container.getBoundingClientRect().width || 100;
+        const cardHeight = containerWidth * (3.5 / 2.5);
+        const totalHeight = Math.max(cardHeight, height + cardHeight);
+        container.style.minHeight = totalHeight + 'px';
+
+        topPx = 0;
+        for (let i = 0; i < pile.length; i++) {
+          const card = pile[i];
+          const isSelected = state.selected &&
+            state.selected.pile === 'tableau' &&
+            state.selected.colIndex === col &&
+            i >= state.selected.cardIndex;
+
+          let el;
+          if (card.faceUp) {
+            el = createCardFaceEl(card, i + 1, topPx, isSelected ? 'selected' : '');
+            const capturedCol = col;
+            const capturedIdx = i;
+            el.addEventListener('click', (e) => {
+              e.stopPropagation();
+              handleTableauClick(capturedCol, capturedIdx);
+            });
+          } else {
+            el = createCardBackEl(i + 1, topPx);
+          }
+          container.appendChild(el);
+
+          if (i < pile.length - 1) {
+            topPx += card.faceUp ? OFFSET_UP : OFFSET_DOWN;
+          }
+        }
+      }
+    }
+
+    function render() {
+      renderStock();
+      renderWaste();
+      renderFoundations();
+      renderTableau();
+    }
+
+    // ── Event wiring ───────────────────────────────────────────────────────────
+    document.getElementById('stock-pile').addEventListener('click', stockClick);
+    document.getElementById('waste-pile').addEventListener('click', handleWasteClick);
+
+    for (let fi = 0; fi < 4; fi++) {
+      const capturedFi = fi;
+      document.getElementById('foundation-' + fi).addEventListener('click', () => {
+        handleFoundationClick(capturedFi);
+      });
+    }
+
+    for (let col = 0; col < 7; col++) {
+      const capturedCol = col;
+      document.getElementById('tableau-' + col).addEventListener('click', () => {
+        // Clicking the pile container itself (empty col) — attempt to place
+        if (state.selected) {
+          tryMoveToTableau(capturedCol);
+        }
+      });
+    }
+
+    document.getElementById('new-game-btn').addEventListener('click', newGame);
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+      document.getElementById('win-overlay').classList.remove('show');
+      newGame();
+    });
+
+    function newGame() {
+      deal();
+      render();
+    }
+
+    // ── Start ──────────────────────────────────────────────────────────────────
+    newGame();
+  </script>
+
+</body>
+</html>
