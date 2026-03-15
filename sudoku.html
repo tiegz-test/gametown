@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sudoku — GameTown</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { min-height: 100%; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #7B2FBE 0%, #3A0CA3 20%, #00D4FF 45%, #FF006E 70%, #FB5607 100%);
+      background-attachment: fixed;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: 'Orbitron', sans-serif;
+      padding-bottom: 3rem;
+    }
+
+    /* ── Header ── */
+    header {
+      width: 100%;
+      max-width: 500px;
+      padding: 1.5rem 1.5rem 1rem;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .back-link {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #00D4FF;
+      text-decoration: none;
+      text-shadow: 0 0 10px rgba(0,212,255,0.6);
+      transition: text-shadow 0.2s;
+      white-space: nowrap;
+    }
+    .back-link:hover { text-shadow: 0 0 18px #00D4FF, 0 0 40px rgba(0,212,255,0.5); }
+
+    h1 {
+      font-size: clamp(1.5rem, 5vw, 2.8rem);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      color: #fff;
+      text-align: center;
+      text-shadow: 0 0 10px #00D4FF, 0 0 30px #00D4FF, 0 0 60px #FF006E, 0 0 100px #FF006E, 0 4px 8px rgba(0,0,0,0.5);
+      user-select: none;
+    }
+
+    .new-game-btn {
+      justify-self: end;
+      padding: 0.5rem 1.2rem;
+      background: linear-gradient(135deg, #00D4FF, #FF006E);
+      color: #0a001a;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: filter 0.2s, box-shadow 0.2s;
+      white-space: nowrap;
+    }
+    .new-game-btn:hover {
+      filter: brightness(1.15);
+      box-shadow: 0 0 20px rgba(0,212,255,0.6), 0 0 40px rgba(255,0,110,0.4);
+    }
+
+    /* ── Main layout ── */
+    main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 0 1rem;
+      width: 100%;
+    }
+
+    /* ── Difficulty selector ── */
+    .diff-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .diff-btn {
+      padding: 0.4rem 1.1rem;
+      background: rgba(10,5,30,0.5);
+      border: 1px solid rgba(0,212,255,0.25);
+      border-radius: 999px;
+      color: rgba(255,255,255,0.55);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .diff-btn.active {
+      background: rgba(0,212,255,0.15);
+      border-color: rgba(0,212,255,0.7);
+      color: #00D4FF;
+      text-shadow: 0 0 8px rgba(0,212,255,0.6);
+    }
+    .diff-btn:hover:not(.active) {
+      border-color: rgba(0,212,255,0.45);
+      color: rgba(255,255,255,0.8);
+    }
+
+    /* ── Board ── */
+    #board {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      width: min(90vw, 450px);
+      aspect-ratio: 1;
+      border: 3px solid rgba(0,212,255,0.65);
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(10,5,30,0.75);
+      box-shadow: 0 0 30px rgba(0,212,255,0.15), 0 0 60px rgba(255,0,110,0.08);
+    }
+
+    .cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(0.8rem, 2.4vw, 1.2rem);
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      border-right: 1px solid rgba(0,212,255,0.12);
+      border-bottom: 1px solid rgba(0,212,255,0.12);
+      transition: background 0.1s;
+      user-select: none;
+      position: relative;
+    }
+
+    /* Thick box borders */
+    .cell[data-col="2"], .cell[data-col="5"] { border-right: 2px solid rgba(0,212,255,0.5); }
+    .cell[data-row="2"], .cell[data-row="5"] { border-bottom: 2px solid rgba(0,212,255,0.5); }
+    /* Remove right border on last column, bottom border on last row */
+    .cell[data-col="8"] { border-right: none; }
+    .cell[data-row="8"] { border-bottom: none; }
+
+    /* Cell states */
+    .cell.given    { color: #00D4FF; background: rgba(0,212,255,0.07); cursor: default; }
+    .cell.selected { background: rgba(0,212,255,0.28) !important; }
+    .cell.related  { background: rgba(0,212,255,0.06); }
+    .cell.same-num { background: rgba(0,212,255,0.15); }
+    .cell.error    { color: #FF006E !important; background: rgba(255,0,110,0.13) !important; }
+
+    /* ── Status row ── */
+    #status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: min(90vw, 450px);
+      padding: 0 0.25rem;
+    }
+
+    #timer {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.6);
+    }
+
+    #error-count {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #FF006E;
+      text-shadow: 0 0 8px rgba(255,0,110,0.5);
+      min-height: 1em;
+    }
+
+    /* ── Number pad ── */
+    #numpad {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.45rem;
+      width: min(90vw, 450px);
+    }
+
+    .num-btn {
+      padding: 0.65rem 0;
+      background: rgba(10,5,30,0.55);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(0,212,255,0.22);
+      border-radius: 10px;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      text-align: center;
+    }
+    .num-btn:hover, .num-btn:active {
+      background: rgba(0,212,255,0.2);
+      border-color: rgba(0,212,255,0.5);
+    }
+    .num-btn.clear-btn {
+      font-size: 0.6rem;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.6);
+      grid-column: span 1;
+    }
+
+    /* ── Win overlay ── */
+    #win-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10,5,30,0.75);
+      backdrop-filter: blur(6px);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+    }
+    #win-overlay.show { display: flex; }
+
+    .win-panel {
+      background: rgba(10,5,30,0.85);
+      border: 1px solid rgba(0,212,255,0.4);
+      border-radius: 20px;
+      padding: 3rem 4rem;
+      text-align: center;
+      box-shadow: 0 0 40px rgba(0,212,255,0.3), 0 0 80px rgba(255,0,110,0.2);
+    }
+    .win-panel h2 {
+      font-size: clamp(2rem,6vw,3.5rem);
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 10px #00D4FF, 0 0 30px #00D4FF, 0 0 60px #FF006E;
+      margin-bottom: 0.4rem;
+    }
+    .win-panel p {
+      color: rgba(255,255,255,0.7);
+      font-family: system-ui, sans-serif;
+      margin-bottom: 2rem;
+    }
+    .win-panel button {
+      padding: 0.75rem 2.5rem;
+      background: linear-gradient(135deg, #00D4FF, #FF006E);
+      color: #0a001a;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: filter 0.2s, box-shadow 0.2s;
+    }
+    .win-panel button:hover {
+      filter: brightness(1.15);
+      box-shadow: 0 0 20px rgba(0,212,255,0.6), 0 0 40px rgba(255,0,110,0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="index.html" class="back-link">← GameTown</a>
+    <h1>Sudoku</h1>
+    <button class="new-game-btn" id="new-game-btn">New Game</button>
+  </header>
+
+  <main>
+    <div class="diff-row">
+      <button class="diff-btn" data-diff="easy">Easy</button>
+      <button class="diff-btn active" data-diff="medium">Medium</button>
+      <button class="diff-btn" data-diff="hard">Hard</button>
+    </div>
+
+    <div id="board"></div>
+
+    <div id="status-row">
+      <span id="timer">00:00</span>
+      <span id="error-count"></span>
+    </div>
+
+    <div id="numpad"></div>
+  </main>
+
+  <div id="win-overlay">
+    <div class="win-panel">
+      <h2>Solved!</h2>
+      <p id="win-msg">You completed the puzzle.</p>
+      <button id="play-again-btn">Play Again</button>
+    </div>
+  </div>
+
+  <script>
+    // ── Constants ──────────────────────────────────────────────────────────────
+    const GIVENS = { easy: 38, medium: 30, hard: 24 };
+
+    // ── State ──────────────────────────────────────────────────────────────────
+    let givenGrid = [];   // 9×9 — 0 or clue digit (immutable during play)
+    let playerGrid = [];  // 9×9 — player's entries
+    let errorGrid  = [];  // 9×9 boolean — true = conflict
+    let selected   = null; // { r, c } | null
+    let difficulty = 'medium';
+    let timerSecs  = 0;
+    let timerInterval = null;
+    let gameWon    = false;
+
+    // ── DOM refs ───────────────────────────────────────────────────────────────
+    const boardEl  = document.getElementById('board');
+    const numpadEl = document.getElementById('numpad');
+
+    // ── Puzzle generation ──────────────────────────────────────────────────────
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function isValid(grid, r, c, n) {
+      // Row
+      for (let cc = 0; cc < 9; cc++) if (cc !== c && grid[r][cc] === n) return false;
+      // Col
+      for (let rr = 0; rr < 9; rr++) if (rr !== r && grid[rr][c] === n) return false;
+      // Box
+      const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+      for (let rr = br; rr < br + 3; rr++)
+        for (let cc = bc; cc < bc + 3; cc++)
+          if ((rr !== r || cc !== c) && grid[rr][cc] === n) return false;
+      return true;
+    }
+
+    function fillBoard(grid) {
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          if (grid[r][c] !== 0) continue;
+          const nums = shuffle([1,2,3,4,5,6,7,8,9]);
+          for (const n of nums) {
+            if (isValid(grid, r, c, n)) {
+              grid[r][c] = n;
+              if (fillBoard(grid)) return true;
+              grid[r][c] = 0;
+            }
+          }
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function newGame() {
+      gameWon = false;
+      selected = null;
+
+      // Build a complete board
+      const full = Array.from({length: 9}, () => Array(9).fill(0));
+      fillBoard(full);
+
+      // Remove clues
+      const puzzle = full.map(row => [...row]);
+      const cells = shuffle(Array.from({length: 81}, (_, i) => [Math.floor(i / 9), i % 9]));
+      let toRemove = 81 - GIVENS[difficulty];
+      for (const [r, c] of cells) {
+        if (toRemove === 0) break;
+        puzzle[r][c] = 0;
+        toRemove--;
+      }
+
+      givenGrid  = puzzle.map(row => [...row]);
+      playerGrid = puzzle.map(row => [...row]);
+      errorGrid  = Array.from({length: 9}, () => Array(9).fill(false));
+
+      resetTimer();
+      startTimer();
+      renderBoard();
+      document.getElementById('win-overlay').classList.remove('show');
+      updateErrorCount();
+    }
+
+    // ── Error checking ─────────────────────────────────────────────────────────
+    function isConflict(r, c, n) {
+      if (n === 0) return false;
+      // Check row
+      for (let cc = 0; cc < 9; cc++)
+        if (cc !== c && playerGrid[r][cc] === n) return true;
+      // Check col
+      for (let rr = 0; rr < 9; rr++)
+        if (rr !== r && playerGrid[rr][c] === n) return true;
+      // Check box
+      const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+      for (let rr = br; rr < br + 3; rr++)
+        for (let cc = bc; cc < bc + 3; cc++)
+          if ((rr !== r || cc !== c) && playerGrid[rr][cc] === n) return true;
+      return false;
+    }
+
+    function checkErrors() {
+      for (let r = 0; r < 9; r++)
+        for (let c = 0; c < 9; c++)
+          errorGrid[r][c] = isConflict(r, c, playerGrid[r][c]);
+    }
+
+    function updateErrorCount() {
+      let count = 0;
+      for (let r = 0; r < 9; r++)
+        for (let c = 0; c < 9; c++)
+          if (errorGrid[r][c]) count++;
+      const el = document.getElementById('error-count');
+      el.textContent = count > 0 ? count + (count === 1 ? ' error' : ' errors') : '';
+    }
+
+    // ── Win detection ──────────────────────────────────────────────────────────
+    function checkWin() {
+      for (let r = 0; r < 9; r++)
+        for (let c = 0; c < 9; c++)
+          if (playerGrid[r][c] === 0 || errorGrid[r][c]) return;
+      // All filled, no errors
+      gameWon = true;
+      stopTimer();
+      document.getElementById('win-msg').textContent =
+        'Completed in ' + formatTime(timerSecs) + ' on ' + difficulty + '.';
+      document.getElementById('win-overlay').classList.add('show');
+    }
+
+    // ── Player actions ─────────────────────────────────────────────────────────
+    function selectCell(r, c) {
+      selected = { r, c };
+      renderBoard();
+    }
+
+    function inputDigit(n) {
+      if (!selected || gameWon) return;
+      const { r, c } = selected;
+      if (givenGrid[r][c] !== 0) return; // can't overwrite given
+      playerGrid[r][c] = n;
+      checkErrors();
+      updateErrorCount();
+      renderBoard();
+      checkWin();
+    }
+
+    function clearCell() {
+      if (!selected || gameWon) return;
+      const { r, c } = selected;
+      if (givenGrid[r][c] !== 0) return;
+      playerGrid[r][c] = 0;
+      checkErrors();
+      updateErrorCount();
+      renderBoard();
+    }
+
+    function moveSel(dr, dc) {
+      if (!selected) { selected = { r: 0, c: 0 }; renderBoard(); return; }
+      const r = Math.max(0, Math.min(8, selected.r + dr));
+      const c = Math.max(0, Math.min(8, selected.c + dc));
+      selected = { r, c };
+      renderBoard();
+    }
+
+    // ── Rendering ──────────────────────────────────────────────────────────────
+    function renderBoard() {
+      const cells = boardEl.querySelectorAll('.cell');
+      const selR = selected ? selected.r : -1;
+      const selC = selected ? selected.c : -1;
+      const selNum = selected ? playerGrid[selR]?.[selC] : 0;
+      const selBoxR = selR >= 0 ? Math.floor(selR / 3) : -1;
+      const selBoxC = selC >= 0 ? Math.floor(selC / 3) : -1;
+
+      cells.forEach(cell => {
+        const r = +cell.dataset.row, c = +cell.dataset.col;
+        const val = playerGrid[r][c];
+        const isGiven = givenGrid[r][c] !== 0;
+        const isSelected = r === selR && c === selC;
+        const isRelated = !isSelected && (r === selR || c === selC ||
+          (Math.floor(r/3) === selBoxR && Math.floor(c/3) === selBoxC));
+        const isSameNum = !isSelected && selNum > 0 && val === selNum;
+        const isError = errorGrid[r][c];
+
+        cell.textContent = val > 0 ? val : '';
+        cell.className = 'cell';
+        if (isGiven)    cell.classList.add('given');
+        if (isSelected) cell.classList.add('selected');
+        else if (isSameNum) cell.classList.add('same-num');
+        else if (isRelated) cell.classList.add('related');
+        if (isError)    cell.classList.add('error');
+      });
+    }
+
+    // ── Timer ──────────────────────────────────────────────────────────────────
+    function formatTime(s) {
+      const m = Math.floor(s / 60);
+      return String(m).padStart(2,'0') + ':' + String(s % 60).padStart(2,'0');
+    }
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        timerSecs++;
+        document.getElementById('timer').textContent = formatTime(timerSecs);
+      }, 1000);
+    }
+
+    function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+
+    function resetTimer() {
+      stopTimer();
+      timerSecs = 0;
+      document.getElementById('timer').textContent = '00:00';
+    }
+
+    // ── Build DOM ──────────────────────────────────────────────────────────────
+    // Board cells
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.row = r;
+        cell.dataset.col = c;
+        cell.addEventListener('click', () => selectCell(r, c));
+        boardEl.appendChild(cell);
+      }
+    }
+
+    // Number pad: 1–9 then Clear
+    for (let n = 1; n <= 9; n++) {
+      const btn = document.createElement('button');
+      btn.className = 'num-btn';
+      btn.textContent = n;
+      btn.addEventListener('click', () => inputDigit(n));
+      numpadEl.appendChild(btn);
+    }
+    const clrBtn = document.createElement('button');
+    clrBtn.className = 'num-btn clear-btn';
+    clrBtn.textContent = 'Clear';
+    clrBtn.addEventListener('click', clearCell);
+    numpadEl.appendChild(clrBtn);
+
+    // ── Keyboard ───────────────────────────────────────────────────────────────
+    document.addEventListener('keydown', e => {
+      if (gameWon) return;
+      if (e.key >= '1' && e.key <= '9') { e.preventDefault(); inputDigit(+e.key); }
+      else if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); clearCell(); }
+      else if (e.key === 'ArrowUp')    { e.preventDefault(); moveSel(-1, 0); }
+      else if (e.key === 'ArrowDown')  { e.preventDefault(); moveSel(1, 0); }
+      else if (e.key === 'ArrowLeft')  { e.preventDefault(); moveSel(0, -1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); moveSel(0, 1); }
+    });
+
+    // ── Difficulty buttons ─────────────────────────────────────────────────────
+    document.querySelectorAll('.diff-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        difficulty = btn.dataset.diff;
+        newGame();
+      });
+    });
+
+    // ── Header buttons ─────────────────────────────────────────────────────────
+    document.getElementById('new-game-btn').addEventListener('click', newGame);
+    document.getElementById('play-again-btn').addEventListener('click', newGame);
+
+    // ── Start ──────────────────────────────────────────────────────────────────
+    newGame();
+  </script>
+
+</body>
+</html>
