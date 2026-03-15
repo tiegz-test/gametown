@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spit — GameTown</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(
+        135deg,
+        #7B2FBE 0%,
+        #3A0CA3 20%,
+        #00D4FF 45%,
+        #FF006E 70%,
+        #FB5607 100%
+      );
+      background-attachment: fixed;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: 'Orbitron', sans-serif;
+      padding-bottom: 3rem;
+    }
+
+    /* ── Header ── */
+    header {
+      width: 100%;
+      max-width: 700px;
+      padding: 1.5rem 1.5rem 1rem;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .back-link {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #00D4FF;
+      text-decoration: none;
+      text-shadow: 0 0 10px rgba(0, 212, 255, 0.6);
+      transition: text-shadow 0.2s;
+      white-space: nowrap;
+    }
+
+    .back-link:hover {
+      text-shadow: 0 0 18px rgba(0, 212, 255, 1), 0 0 40px rgba(0, 212, 255, 0.5);
+    }
+
+    h1 {
+      font-size: clamp(1.5rem, 5vw, 2.8rem);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      color: #ffffff;
+      text-align: center;
+      text-shadow:
+        0 0 10px #00D4FF,
+        0 0 30px #00D4FF,
+        0 0 60px #FF006E,
+        0 0 100px #FF006E,
+        0 4px 8px rgba(0, 0, 0, 0.5);
+      user-select: none;
+    }
+
+    .new-game-btn {
+      justify-self: end;
+      padding: 0.5rem 1.2rem;
+      background: linear-gradient(135deg, #00D4FF, #FF006E);
+      color: #0a001a;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: filter 0.2s, box-shadow 0.2s;
+      white-space: nowrap;
+    }
+
+    .new-game-btn:hover {
+      filter: brightness(1.15);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.6), 0 0 40px rgba(255, 0, 110, 0.4);
+    }
+
+    /* ── Board ── */
+    #board {
+      width: 100%;
+      max-width: 700px;
+      padding: 0 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    /* Side label rows */
+    .side-label {
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      padding: 0 0.2rem;
+    }
+
+    /* Tableau rows */
+    .tableau-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.5rem;
+    }
+
+    /* Central piles row */
+    .central-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 2rem;
+      padding: 0.4rem 0;
+    }
+
+    /* Bottom controls row */
+    .controls-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.2rem 0;
+    }
+
+    .controls-spacer { flex: 1; }
+
+    /* ── Pile containers ── */
+    .pile-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 2.5 / 3.5;
+      border: 2px dashed rgba(0, 212, 255, 0.25);
+      border-radius: 10px;
+      background: rgba(10, 5, 30, 0.3);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .pile-container.no-border {
+      border: none;
+      background: none;
+      cursor: default;
+    }
+
+    /* Central piles are a fixed width */
+    .central-pile {
+      width: clamp(60px, 13vw, 100px);
+      flex-shrink: 0;
+    }
+
+    /* Stock pile — shows card count badge */
+    .stock-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 2.5 / 3.5;
+      border: 2px dashed rgba(0, 212, 255, 0.25);
+      border-radius: 10px;
+      background: rgba(10, 5, 30, 0.3);
+      cursor: default;
+      flex-shrink: 0;
+      max-width: clamp(50px, 12vw, 85px);
+    }
+
+    .stock-count {
+      position: absolute;
+      bottom: -1.4rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.55rem;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    /* ── Cards ── */
+    .card {
+      position: absolute;
+      width: 100%;
+      aspect-ratio: 2.5 / 3.5;
+      border-radius: 10px;
+      cursor: pointer;
+      user-select: none;
+      top: 0;
+      left: 0;
+      transition: box-shadow 0.15s;
+    }
+
+    .card-back {
+      background: linear-gradient(135deg, #3A0CA3 0%, #7B2FBE 50%, #3A0CA3 100%);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+    }
+
+    .card-back::after {
+      content: '★';
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(0.8rem, 2vw, 1.4rem);
+      color: rgba(0, 212, 255, 0.2);
+      pointer-events: none;
+    }
+
+    .card-face {
+      background: rgba(18, 10, 40, 0.93);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(2px, 0.6vw, 5px);
+      font-family: system-ui, sans-serif;
+      font-weight: 700;
+    }
+
+    .card-face .corner {
+      font-size: clamp(0.4rem, 1.1vw, 0.75rem);
+      line-height: 1.1;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .card-face .corner.bottom {
+      align-items: flex-end;
+      transform: rotate(180deg);
+    }
+
+    .card-face .center-suit {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(0.7rem, 2.2vw, 1.6rem);
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .red  { color: #FF006E; }
+    .blue { color: #00D4FF; }
+
+    .card.selected {
+      box-shadow:
+        0 0 0 2px #00D4FF,
+        0 0 14px rgba(0, 212, 255, 0.8),
+        0 0 28px rgba(0, 212, 255, 0.4);
+      z-index: 10 !important;
+    }
+
+    /* ── Spit button ── */
+    #spit-btn {
+      padding: 0.65rem 2rem;
+      background: linear-gradient(135deg, #FB5607, #FF006E);
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: filter 0.2s, box-shadow 0.2s, transform 0.1s;
+      flex-shrink: 0;
+    }
+
+    #spit-btn:hover {
+      filter: brightness(1.15);
+      box-shadow: 0 0 20px rgba(251, 86, 7, 0.7), 0 0 40px rgba(255, 0, 110, 0.4);
+    }
+
+    #spit-btn:active {
+      transform: scale(0.96);
+    }
+
+    #spit-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      filter: none;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* ── Status message ── */
+    #status-msg {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: rgba(255, 255, 255, 0.6);
+      text-align: center;
+      min-height: 1.2em;
+      padding: 0.2rem 0;
+    }
+
+    /* ── Win/Lose overlay ── */
+    #result-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 5, 30, 0.75);
+      backdrop-filter: blur(6px);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #result-overlay.show {
+      display: flex;
+    }
+
+    .result-panel {
+      background: rgba(10, 5, 30, 0.85);
+      border: 1px solid rgba(0, 212, 255, 0.4);
+      border-radius: 20px;
+      padding: 3rem 4rem;
+      text-align: center;
+      box-shadow:
+        0 0 40px rgba(0, 212, 255, 0.3),
+        0 0 80px rgba(255, 0, 110, 0.2);
+    }
+
+    .result-panel h2 {
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 0.08em;
+      text-shadow:
+        0 0 10px #00D4FF,
+        0 0 30px #00D4FF,
+        0 0 60px #FF006E;
+      margin-bottom: 0.5rem;
+    }
+
+    .result-panel p {
+      color: rgba(255,255,255,0.7);
+      font-family: system-ui, sans-serif;
+      margin-bottom: 2rem;
+    }
+
+    .result-panel button {
+      padding: 0.75rem 2.5rem;
+      background: linear-gradient(135deg, #00D4FF, #FF006E);
+      color: #0a001a;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: filter 0.2s, box-shadow 0.2s;
+    }
+
+    .result-panel button:hover {
+      filter: brightness(1.15);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.6), 0 0 40px rgba(255, 0, 110, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="index.html" class="back-link">← GameTown</a>
+    <h1>Spit</h1>
+    <button class="new-game-btn" id="new-game-btn">New Game</button>
+  </header>
+
+  <div id="board">
+    <!-- Computer side label -->
+    <div class="side-label">Computer</div>
+
+    <!-- Computer tableau (5 columns) -->
+    <div class="tableau-row" id="computer-tableau">
+      <div class="pile-container" id="cpu-col-0"></div>
+      <div class="pile-container" id="cpu-col-1"></div>
+      <div class="pile-container" id="cpu-col-2"></div>
+      <div class="pile-container" id="cpu-col-3"></div>
+      <div class="pile-container" id="cpu-col-4"></div>
+    </div>
+
+    <!-- Central piles -->
+    <div class="central-row">
+      <div class="pile-container central-pile" id="central-0" data-index="0"></div>
+      <div class="pile-container central-pile" id="central-1" data-index="1"></div>
+    </div>
+
+    <!-- Player tableau (5 columns) -->
+    <div class="tableau-row" id="player-tableau">
+      <div class="pile-container" id="player-col-0" data-col="0"></div>
+      <div class="pile-container" id="player-col-1" data-col="1"></div>
+      <div class="pile-container" id="player-col-2" data-col="2"></div>
+      <div class="pile-container" id="player-col-3" data-col="3"></div>
+      <div class="pile-container" id="player-col-4" data-col="4"></div>
+    </div>
+
+    <!-- Player controls -->
+    <div class="controls-row">
+      <div class="stock-container" id="player-stock">
+        <span class="stock-count" id="player-stock-count"></span>
+      </div>
+      <div class="controls-spacer"></div>
+      <button id="spit-btn">Spit!</button>
+    </div>
+
+    <div id="status-msg">Click SPIT! to start</div>
+  </div>
+
+  <div id="result-overlay">
+    <div class="result-panel">
+      <h2 id="result-title">You Win!</h2>
+      <p id="result-msg">You cleared your piles first.</p>
+      <button id="play-again-btn">Play Again</button>
+    </div>
+  </div>
+
+  <script>
+    // ── Constants ──────────────────────────────────────────────────────────────
+    const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'];
+    const SUIT_SYMBOLS = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
+    const SUIT_COLOR   = { hearts: 'red', diamonds: 'red', clubs: 'blue', spades: 'blue' };
+    const RANK_LABELS  = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
+
+    const CPU_TICK_MS = 750;   // computer move interval
+
+    // ── State ──────────────────────────────────────────────────────────────────
+    let state = {
+      player:   { tableau: [[], [], [], [], []], stock: [] },
+      computer: { tableau: [[], [], [], [], []], stock: [] },
+      centralPiles: [[], []],
+      selected: null,     // null | { colIndex: number }
+      phase: 'waiting',   // 'waiting' | 'playing' | 'gameover'
+      winner: null,
+      staleTicks: 0,      // consecutive ticks with no move by either side
+    };
+
+    let cpuInterval = null;
+
+    // ── Deck helpers ───────────────────────────────────────────────────────────
+    function initDeck() {
+      const deck = [];
+      for (const suit of SUITS)
+        for (let rank = 1; rank <= 13; rank++)
+          deck.push({ suit, rank, faceUp: false });
+      return deck;
+    }
+
+    function shuffle(deck) {
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      return deck;
+    }
+
+    function deal() {
+      const deck = shuffle(initDeck());
+      const half = 26;
+      const playerDeck = deck.slice(0, half);
+      const cpuDeck    = deck.slice(half);
+
+      function buildTableau(d) {
+        const tableau = [[], [], [], [], []];
+        let idx = 0;
+        for (let col = 0; col < 5; col++) {
+          for (let n = 0; n <= col; n++) {
+            const card = d[idx++];
+            card.faceUp = (n === col);
+            tableau[col].push(card);
+          }
+        }
+        // remaining cards = stock (top = last)
+        const stock = d.slice(idx).map(c => { c.faceUp = false; return c; });
+        return { tableau, stock };
+      }
+
+      const p = buildTableau(playerDeck);
+      const c = buildTableau(cpuDeck);
+
+      state.player   = p;
+      state.computer = c;
+      state.centralPiles = [[], []];
+      state.selected = null;
+      state.phase = 'waiting';
+      state.winner = null;
+      state.staleTicks = 0;
+    }
+
+    // ── Game rules ─────────────────────────────────────────────────────────────
+    function rankDiff(r1, r2) {
+      // Wrapping: A(1) is adjacent to K(13) and 2
+      const diff = Math.abs(r1 - r2);
+      return Math.min(diff, 13 - diff);
+    }
+
+    function canPlaceCentral(card, pi) {
+      const pile = state.centralPiles[pi];
+      if (pile.length === 0) return false; // must have a card to play on
+      const top = pile[pile.length - 1];
+      return rankDiff(card.rank, top.rank) === 1;
+    }
+
+    function flipTopCard(tableau, col) {
+      const pile = tableau[col];
+      if (pile.length > 0 && !pile[pile.length - 1].faceUp) {
+        pile[pile.length - 1].faceUp = true;
+      }
+    }
+
+    function checkPlayerWin() {
+      return state.player.tableau.every(col => col.length === 0);
+    }
+
+    function checkCpuWin() {
+      return state.computer.tableau.every(col => col.length === 0);
+    }
+
+    function endGame(winner) {
+      state.phase = 'gameover';
+      state.winner = winner;
+      stopCpu();
+      const title = document.getElementById('result-title');
+      const msg   = document.getElementById('result-msg');
+      if (winner === 'player') {
+        title.textContent = 'You Win!';
+        msg.textContent   = 'You cleared your piles first. Well played!';
+      } else {
+        title.textContent = 'Computer Wins!';
+        msg.textContent   = 'The computer cleared its piles first. Try again!';
+      }
+      document.getElementById('result-overlay').classList.add('show');
+    }
+
+    // ── Spit (deal to central piles) ──────────────────────────────────────────
+    function spit() {
+      if (state.phase === 'gameover') return;
+
+      const playerStock = state.player.stock;
+      const cpuStock    = state.computer.stock;
+
+      // Both must have stock to spit; if one is empty skip that side
+      if (playerStock.length > 0) {
+        const card = playerStock.pop();
+        card.faceUp = true;
+        state.centralPiles[0].push(card);
+      }
+      if (cpuStock.length > 0) {
+        const card = cpuStock.pop();
+        card.faceUp = true;
+        state.centralPiles[1].push(card);
+      }
+
+      // If both stocks were empty and central piles are already there, nothing changes
+      if (state.centralPiles[0].length === 0 && state.centralPiles[1].length === 0) {
+        setStatus('No cards left to spit!');
+        render();
+        return;
+      }
+
+      state.phase = 'playing';
+      state.staleTicks = 0;
+      state.selected = null;
+      startCpu();
+      setStatus('');
+      render();
+    }
+
+    // ── Player moves ───────────────────────────────────────────────────────────
+    function playerSelectCol(col) {
+      if (state.phase !== 'playing') return;
+      const pile = state.player.tableau[col];
+      if (pile.length === 0) return;
+
+      if (state.selected && state.selected.colIndex === col) {
+        state.selected = null;
+      } else {
+        state.selected = { colIndex: col };
+      }
+      render();
+    }
+
+    function playerPlaceCard(pi) {
+      if (state.phase !== 'playing' || !state.selected) return;
+      const col = state.selected.colIndex;
+      const pile = state.player.tableau[col];
+      if (pile.length === 0) return;
+
+      const card = pile[pile.length - 1];
+      if (!canPlaceCentral(card, pi)) {
+        setStatus('Invalid move!');
+        state.selected = null;
+        render();
+        return;
+      }
+
+      pile.pop();
+      card.faceUp = true;
+      state.centralPiles[pi].push(card);
+      flipTopCard(state.player.tableau, col);
+      state.selected = null;
+      state.staleTicks = 0;
+
+      if (checkPlayerWin()) { render(); endGame('player'); return; }
+      setStatus('');
+      render();
+    }
+
+    // ── Computer AI ───────────────────────────────────────────────────────────
+    function startCpu() {
+      stopCpu();
+      cpuInterval = setInterval(computerTick, CPU_TICK_MS);
+    }
+
+    function stopCpu() {
+      if (cpuInterval !== null) { clearInterval(cpuInterval); cpuInterval = null; }
+    }
+
+    function computerTick() {
+      if (state.phase !== 'playing') { stopCpu(); return; }
+
+      for (let col = 0; col < 5; col++) {
+        const pile = state.computer.tableau[col];
+        if (pile.length === 0) continue;
+        const card = pile[pile.length - 1];
+        for (let pi = 0; pi < 2; pi++) {
+          if (canPlaceCentral(card, pi)) {
+            pile.pop();
+            card.faceUp = true;
+            state.centralPiles[pi].push(card);
+            flipTopCard(state.computer.tableau, col);
+            state.staleTicks = 0;
+            if (checkCpuWin()) { render(); endGame('computer'); return; }
+            render();
+            return;
+          }
+        }
+      }
+
+      // No move found this tick
+      state.staleTicks++;
+      if (state.staleTicks >= 6) {
+        // Auto-spit if both stuck
+        state.staleTicks = 0;
+        if (state.player.stock.length > 0 || state.computer.stock.length > 0) {
+          stopCpu();
+          setStatus('Both stuck — Spit!');
+          spit();
+        } else {
+          setStatus('No moves left — game over!');
+          endGame('player'); // tie-break: player wins if stocks exhausted
+        }
+      }
+    }
+
+    // ── Rendering ──────────────────────────────────────────────────────────────
+    function rankLabel(rank) { return RANK_LABELS[rank] || String(rank); }
+
+    function createCardFaceEl(card) {
+      const el = document.createElement('div');
+      el.className = 'card card-face';
+      const cc = SUIT_COLOR[card.suit];
+      const sym = SUIT_SYMBOLS[card.suit];
+      const lbl = rankLabel(card.rank);
+      el.innerHTML = `
+        <div class="corner ${cc}"><span>${lbl}</span><span>${sym}</span></div>
+        <div class="center-suit ${cc}">${sym}</div>
+        <div class="corner bottom ${cc}"><span>${lbl}</span><span>${sym}</span></div>
+      `;
+      return el;
+    }
+
+    function createCardBackEl() {
+      const el = document.createElement('div');
+      el.className = 'card card-back';
+      return el;
+    }
+
+    function renderTableauCol(containerEl, pile, isPlayer) {
+      containerEl.innerHTML = '';
+      if (pile.length === 0) return;
+      // Only render top card (Spit piles are 1-card-visible stacks)
+      // Show a back for each face-down card below, stacked tight, then the top
+      const stackDepth = Math.min(pile.length - 1, 3); // max 3 ghost backs
+      for (let i = 0; i < stackDepth; i++) {
+        const back = createCardBackEl();
+        back.style.top  = (i * 3) + 'px';
+        back.style.left = (i * 1) + 'px';
+        back.style.zIndex = i + 1;
+        containerEl.appendChild(back);
+      }
+      const topCard = pile[pile.length - 1];
+      const topEl = topCard.faceUp ? createCardFaceEl(topCard) : createCardBackEl();
+      topEl.style.top    = (stackDepth * 3) + 'px';
+      topEl.style.left   = (stackDepth * 1) + 'px';
+      topEl.style.zIndex = stackDepth + 2;
+
+      if (isPlayer) {
+        const col = parseInt(containerEl.dataset.col);
+        if (state.selected && state.selected.colIndex === col) {
+          topEl.classList.add('selected');
+        }
+        topEl.addEventListener('click', (e) => { e.stopPropagation(); playerSelectCol(col); });
+      }
+      containerEl.appendChild(topEl);
+    }
+
+    function renderCentralPile(containerEl, pile) {
+      containerEl.innerHTML = '';
+      if (pile.length === 0) {
+        containerEl.style.borderStyle = 'dashed';
+        return;
+      }
+      containerEl.style.borderStyle = 'solid';
+      const top = pile[pile.length - 1];
+      const el = createCardFaceEl(top);
+      containerEl.appendChild(el);
+    }
+
+    function renderStock() {
+      const el = document.getElementById('player-stock');
+      el.innerHTML = '';
+      const count = state.player.stock.length;
+      if (count > 0) {
+        const back = createCardBackEl();
+        back.style.top = '0'; back.style.zIndex = '1';
+        el.appendChild(back);
+      }
+      document.getElementById('player-stock-count').textContent =
+        count > 0 ? count + ' left' : '';
+    }
+
+    function renderSpitBtn() {
+      const btn = document.getElementById('spit-btn');
+      const playerStockEmpty = state.player.stock.length === 0;
+      const cpuStockEmpty    = state.computer.stock.length === 0;
+      btn.disabled = (state.phase === 'gameover') ||
+                     (state.phase === 'playing' && playerStockEmpty && cpuStockEmpty);
+    }
+
+    function render() {
+      // Computer tableau
+      for (let col = 0; col < 5; col++) {
+        const el = document.getElementById('cpu-col-' + col);
+        renderTableauCol(el, state.computer.tableau[col], false);
+      }
+      // Central piles
+      renderCentralPile(document.getElementById('central-0'), state.centralPiles[0]);
+      renderCentralPile(document.getElementById('central-1'), state.centralPiles[1]);
+      // Player tableau
+      for (let col = 0; col < 5; col++) {
+        const el = document.getElementById('player-col-' + col);
+        renderTableauCol(el, state.player.tableau[col], true);
+      }
+      // Stock + spit btn
+      renderStock();
+      renderSpitBtn();
+    }
+
+    function setStatus(msg) {
+      document.getElementById('status-msg').textContent = msg;
+    }
+
+    // ── Event wiring ───────────────────────────────────────────────────────────
+    document.getElementById('spit-btn').addEventListener('click', spit);
+
+    document.getElementById('central-0').addEventListener('click', () => playerPlaceCard(0));
+    document.getElementById('central-1').addEventListener('click', () => playerPlaceCard(1));
+
+    for (let col = 0; col < 5; col++) {
+      const capturedCol = col;
+      document.getElementById('player-col-' + col).addEventListener('click', () => {
+        if (state.selected) {
+          // clicking empty col with selection: deselect
+          if (state.player.tableau[capturedCol].length === 0) {
+            state.selected = null; render();
+          } else {
+            playerSelectCol(capturedCol);
+          }
+        } else {
+          playerSelectCol(capturedCol);
+        }
+      });
+    }
+
+    document.getElementById('new-game-btn').addEventListener('click', newGame);
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+      document.getElementById('result-overlay').classList.remove('show');
+      newGame();
+    });
+
+    function newGame() {
+      stopCpu();
+      deal();
+      setStatus('Click SPIT! to start');
+      render();
+    }
+
+    // ── Start ──────────────────────────────────────────────────────────────────
+    newGame();
+  </script>
+
+</body>
+</html>
