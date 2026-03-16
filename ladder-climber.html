@@ -561,10 +561,16 @@
           player.x = ladder.x + ladder.w / 2 - PW / 2;
         }
 
-        // Jump
-        if (jumpPressed && player.onGround) {
-          player.vy = JUMP_VY;
-          player.onGround = false;
+        // Jump (or climb if near a ladder)
+        if (jumpPressed) {
+          if (ladder) {
+            player.onLadder = true;
+            player.x = ladder.x + ladder.w / 2 - PW / 2;
+            player.vy = -CLIMB_SPEED;
+          } else if (player.onGround) {
+            player.vy = JUMP_VY;
+            player.onGround = false;
+          }
         }
 
         // Gravity
