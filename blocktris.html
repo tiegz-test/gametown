@@ -286,7 +286,7 @@
   <script>
     (function() {
       var S = ['14px','16px','18px','20px','22px'];
-      var i = Math.min(Math.max(parseInt(localStorage.getItem('gametown-font-idx') || '2', 10), 0), S.length - 1);
+      var i = Math.min(Math.max(parseInt(localStorage.getItem('gametown-font-idx') || '3', 10), 0), S.length - 1);
       document.documentElement.style.fontSize = S[i];
       document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('font-dec').addEventListener('click', function() {
