@@ -252,7 +252,7 @@
       font-weight: 700;
     }
     .card-face .corner {
-      font-size: 0.6rem;
+      font-size: 0.9rem;
       line-height: 1.1;
       display: flex;
       flex-direction: column;
@@ -269,12 +269,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.3rem;
+      font-size: 2rem;
       opacity: 0.35;
       pointer-events: none;
     }
-    .card-lg .corner { font-size: 0.72rem; }
-    .card-lg .center-suit { font-size: 1.6rem; }
+    .card-lg .corner { font-size: 1.1rem; }
+    .card-lg .center-suit { font-size: 2.4rem; }
 
     .card-empty {
       background: rgba(10,40,10,0.4);
@@ -808,9 +808,9 @@ function cardHTML(card, size='md', faceDown=false) {
   }
   const col = suitColor(card.suit);
   return `<div class="card card-${size} card-face">
-    <div class="corner top"><span class="${col}">${card.rank}</span><span class="${col}" style="font-size:0.55em">${card.suit}</span></div>
+    <div class="corner top"><span class="${col}">${card.rank}</span><span class="${col}" style="font-size:0.75em">${card.suit}</span></div>
     <div class="center-suit ${col}">${card.suit}</div>
-    <div class="corner bot"><span class="${col}">${card.rank}</span><span class="${col}" style="font-size:0.55em">${card.suit}</span></div>
+    <div class="corner bot"><span class="${col}">${card.rank}</span><span class="${col}" style="font-size:0.75em">${card.suit}</span></div>
   </div>`;
 }
 
