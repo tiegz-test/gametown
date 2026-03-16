@@ -70,13 +70,18 @@
 
     .font-btns {
       display: flex;
-      gap: 3px;
+      gap: 1px;
+      background: rgba(8,25,5,0.92);
+      border: 1px solid rgba(212,160,23,0.6);
+      border-radius: 999px;
+      padding: 3px 5px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.6), 0 0 6px rgba(212,160,0,0.2);
     }
 
     .font-btn {
-      padding: 3px 7px;
+      padding: 3px 8px;
       background: transparent;
-      border: 1px solid rgba(212,160,23,0.45);
+      border: none;
       border-radius: 999px;
       color: #D4A017;
       font-family: 'Orbitron', sans-serif;
@@ -84,12 +89,12 @@
       font-weight: 700;
       cursor: pointer;
       letter-spacing: 0.05em;
-      transition: border-color 0.15s, color 0.15s;
+      transition: background 0.15s, color 0.15s;
       white-space: nowrap;
     }
 
     .font-btn:hover {
-      border-color: #D4A017;
+      background: rgba(212,160,23,0.18);
       color: #FFD700;
       text-shadow: 0 0 8px rgba(212,160,23,0.7);
     }
