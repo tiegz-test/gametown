@@ -70,8 +70,40 @@
       user-select: none;
     }
 
-    .new-game-btn {
+    .header-right {
       justify-self: end;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .font-btns {
+      display: flex;
+      gap: 3px;
+    }
+
+    .font-btn {
+      padding: 3px 7px;
+      background: transparent;
+      border: 1px solid rgba(212,160,23,0.45);
+      border-radius: 999px;
+      color: #D4A017;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: border-color 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .font-btn:hover {
+      border-color: #D4A017;
+      color: #FFD700;
+      text-shadow: 0 0 8px rgba(212,160,23,0.7);
+    }
+
+    .new-game-btn {
       padding: 0.5rem 1.2rem;
       background: linear-gradient(135deg, #FFD700, #A67C00);
       color: #1a0800;
@@ -111,7 +143,7 @@
     }
 
     .hud-label {
-      font-size: 0.65rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.12em;
       color: rgba(220, 200, 155, 0.75);
@@ -152,7 +184,7 @@
     }
 
     .hand-label {
-      font-size: 0.6rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.14em;
       color: rgba(220, 200, 155, 0.6);
@@ -160,7 +192,7 @@
     }
 
     .hand-value {
-      font-size: 0.7rem;
+      font-size: 0.8rem;
       font-weight: 700;
       letter-spacing: 0.1em;
       color: rgba(255, 215, 0, 0.85);
@@ -268,7 +300,7 @@
     }
 
     #bet-area-label {
-      font-size: 0.6rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.14em;
       color: rgba(220, 200, 155, 0.6);
@@ -288,7 +320,7 @@
       border: 1px solid rgba(180, 140, 20, 0.4);
       color: rgba(220, 200, 155, 0.9);
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.65rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       border-radius: 999px;
@@ -313,7 +345,7 @@
       border: 1px solid rgba(180, 80, 40, 0.4);
       color: rgba(220, 155, 130, 0.8);
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.65rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       border-radius: 999px;
@@ -446,7 +478,7 @@
     }
 
     .result-panel .result-hand-info {
-      font-size: 0.7rem;
+      font-size: 0.8rem;
       color: rgba(220, 200, 155, 0.6);
       font-family: system-ui, sans-serif;
       margin-bottom: 1.2rem;
@@ -546,7 +578,7 @@
     /* ── Status message ── */
     #status-msg {
       text-align: center;
-      font-size: 0.65rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.12em;
       color: rgba(220, 200, 155, 0.55);
@@ -554,13 +586,34 @@
       text-transform: uppercase;
     }
   </style>
+  <script>
+    (function() {
+      var S = ['14px','16px','18px','20px','22px'];
+      var i = Math.min(Math.max(parseInt(localStorage.getItem('gametown-font-idx') || '1', 10), 0), S.length - 1);
+      document.documentElement.style.fontSize = S[i];
+      document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('font-dec').addEventListener('click', function() {
+          if (i > 0) { i--; localStorage.setItem('gametown-font-idx', i); document.documentElement.style.fontSize = S[i]; }
+        });
+        document.getElementById('font-inc').addEventListener('click', function() {
+          if (i < S.length - 1) { i++; localStorage.setItem('gametown-font-idx', i); document.documentElement.style.fontSize = S[i]; }
+        });
+      });
+    })();
+  </script>
 </head>
 <body>
 
   <header>
     <a href="index.html" class="back-link">← GameTown</a>
     <h1>Blackjack</h1>
-    <button class="new-game-btn" id="new-game-btn">New Game</button>
+    <div class="header-right">
+      <div class="font-btns">
+        <button class="font-btn" id="font-dec">A−</button>
+        <button class="font-btn" id="font-inc">A+</button>
+      </div>
+      <button class="new-game-btn" id="new-game-btn">New Game</button>
+    </div>
   </header>
 
   <div id="game-wrap">

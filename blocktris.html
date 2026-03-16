@@ -61,8 +61,40 @@
       user-select: none;
     }
 
-    .new-game-btn {
+    .header-right {
       justify-self: end;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .font-btns {
+      display: flex;
+      gap: 3px;
+    }
+
+    .font-btn {
+      padding: 3px 7px;
+      background: transparent;
+      border: 1px solid rgba(212,160,23,0.45);
+      border-radius: 999px;
+      color: #D4A017;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: border-color 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .font-btn:hover {
+      border-color: #D4A017;
+      color: #FFD700;
+      text-shadow: 0 0 8px rgba(212,160,23,0.7);
+    }
+
+    .new-game-btn {
       padding: 0.5rem 1.2rem;
       background: linear-gradient(135deg, #FFD700, #A67C00);
       color: #1a0800;
@@ -114,7 +146,7 @@
     }
 
     .panel-label {
-      font-size: 0.6rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.15em;
       color: rgba(212,160,23,0.8);
@@ -132,7 +164,7 @@
     .stat-block { text-align: center; }
 
     .stat-label {
-      font-size: 0.55rem;
+      font-size: 0.7rem;
       font-weight: 700;
       letter-spacing: 0.12em;
       color: rgba(255,255,255,0.45);
@@ -149,7 +181,7 @@
     }
 
     .controls-hint {
-      font-size: 0.5rem;
+      font-size: 0.65rem;
       font-family: system-ui, sans-serif;
       color: rgba(255,255,255,0.35);
       line-height: 1.8;
@@ -185,7 +217,7 @@
     }
 
     .hint-label {
-      font-size: 0.5rem;
+      font-size: 0.65rem;
       font-family: system-ui, sans-serif;
       font-weight: 600;
       letter-spacing: 0.08em;
@@ -251,13 +283,34 @@
       box-shadow: 0 0 20px rgba(212,160,0,0.65), 0 0 40px rgba(160,90,0,0.4);
     }
   </style>
+  <script>
+    (function() {
+      var S = ['14px','16px','18px','20px','22px'];
+      var i = Math.min(Math.max(parseInt(localStorage.getItem('gametown-font-idx') || '1', 10), 0), S.length - 1);
+      document.documentElement.style.fontSize = S[i];
+      document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('font-dec').addEventListener('click', function() {
+          if (i > 0) { i--; localStorage.setItem('gametown-font-idx', i); document.documentElement.style.fontSize = S[i]; }
+        });
+        document.getElementById('font-inc').addEventListener('click', function() {
+          if (i < S.length - 1) { i++; localStorage.setItem('gametown-font-idx', i); document.documentElement.style.fontSize = S[i]; }
+        });
+      });
+    })();
+  </script>
 </head>
 <body>
 
   <header>
     <a href="index.html" class="back-link">← GameTown</a>
     <h1>Blocktris</h1>
-    <button class="new-game-btn" id="new-game-btn">New Game</button>
+    <div class="header-right">
+      <div class="font-btns">
+        <button class="font-btn" id="font-dec">A−</button>
+        <button class="font-btn" id="font-inc">A+</button>
+      </div>
+      <button class="new-game-btn" id="new-game-btn">New Game</button>
+    </div>
   </header>
 
   <main>

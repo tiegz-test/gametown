@@ -143,11 +143,56 @@
       filter: brightness(1.2);
       box-shadow: 0 0 20px rgba(255, 200, 0, 0.65), 0 0 40px rgba(180, 100, 0, 0.4);
     }
+    .font-btns {
+      display: flex;
+      gap: 3px;
+      justify-content: center;
+    }
+
+    .font-btn {
+      padding: 4px 9px;
+      background: transparent;
+      border: 1px solid rgba(212,160,23,0.45);
+      border-radius: 999px;
+      color: #D4A017;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: border-color 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .font-btn:hover {
+      border-color: #D4A017;
+      color: #FFD700;
+      text-shadow: 0 0 8px rgba(212,160,23,0.7);
+    }
   </style>
+  <script>
+    (function() {
+      var S = ['14px','16px','18px','20px','22px'];
+      var i = Math.min(Math.max(parseInt(localStorage.getItem('gametown-font-idx') || '1', 10), 0), S.length - 1);
+      document.documentElement.style.fontSize = S[i];
+      document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('font-dec').addEventListener('click', function() {
+          if (i > 0) { i--; localStorage.setItem('gametown-font-idx', i); document.documentElement.style.fontSize = S[i]; }
+        });
+        document.getElementById('font-inc').addEventListener('click', function() {
+          if (i < S.length - 1) { i++; localStorage.setItem('gametown-font-idx', i); document.documentElement.style.fontSize = S[i]; }
+        });
+      });
+    })();
+  </script>
 </head>
 <body>
   <header>
     <h1>GameTown</h1>
+    <div class="font-btns">
+      <button class="font-btn" id="font-dec">A−</button>
+      <button class="font-btn" id="font-inc">A+</button>
+    </div>
   </header>
   <main class="game-grid-section">
     <div class="game-grid">
